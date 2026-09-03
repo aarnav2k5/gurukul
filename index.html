@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tuition Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand">
+          <span class="brand-mark">✦</span><span>Tutition LMS</span>
+        </div>
+        <div class="profile">
+          <span class="avatar">A</span
+          ><span><b>Teacher library</b><small>Private workspace</small></span>
+        </div>
+        <p class="nav-label">LIBRARY</p>
+        <nav>
+          <button class="nav-item active" data-view="library">
+            <span>▤</span> All resources</button
+          ><button class="nav-item" data-view="notes">
+            <span>✎</span> Chapter notes</button
+          ><button class="nav-item" data-view="pyqs">
+            <span>▥</span> Previous year questions</button
+          ><button class="nav-item" data-view="papers">
+            <span>☑</span> Sample papers
+          </button>
+        </nav>
+        <p class="nav-label">QUICK ACTIONS</p>
+        <button class="nav-item" id="sidebarUpload">
+          <span>＋</span> Upload resource
+        </button>
+        <div class="sidebar-bottom">
+          <div class="storage">
+            <div>
+              <span>Local library storage</span
+              ><b id="storageCount">0 resources</b>
+            </div>
+            <div class="storage-bar"><i id="storageBar"></i></div>
+            <small>Your content is stored on this server.</small>
+          </div>
+          <button class="nav-item"><span>⚙</span> Settings</button>
+        </div>
+      </aside>
+      <main class="main-content">
+        <header class="topbar">
+          <div class="mobile-brand brand">
+            <span class="brand-mark">✦</span><span>Tutition LMS</span>
+          </div>
+          <label class="search"
+            ><span>⌕</span
+            ><input
+              id="globalSearch"
+              placeholder="Search notes, papers, chapters..."
+          /></label>
+          <div class="top-actions">
+            <button class="icon-btn" aria-label="Notifications">
+              ♢<i></i>
+            </button>
+            <div class="top-avatar">A</div>
+            <button class="mobile-menu" aria-label="Open menu">☰</button>
+          </div>
+        </header>
+        <section class="view active-view" id="library">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">YOUR RESOURCE LIBRARY</p>
+              <h1>Teach from your best work.</h1>
+              <p class="subhead">
+                Keep revision notes, PYQs, and sample papers in one searchable
+                place.
+              </p>
+            </div>
+            <button class="primary-btn" id="uploadBtn">
+              ＋ Upload resource
+            </button>
+          </div>
+          <div class="library-stats">
+            <article>
+              <span class="stat-icon lavender">▤</span>
+              <div>
+                <small>All resources</small><strong id="totalCount">0</strong>
+              </div>
+            </article>
+            <article>
+              <span class="stat-icon peach">✎</span>
+              <div>
+                <small>Chapter notes</small><strong id="notesCount">0</strong>
+              </div>
+            </article>
+            <article>
+              <span class="stat-icon mint">▥</span>
+              <div><small>PYQs</small><strong id="pyqsCount">0</strong></div>
+            </article>
+            <article>
+              <span class="stat-icon lemon">☑</span>
+              <div>
+                <small>Sample papers</small><strong id="papersCount">0</strong>
+              </div>
+            </article>
+          </div>
+          <div class="toolbar">
+            <label class="search inner-search"
+              ><span>⌕</span
+              ><input
+                id="resourceSearch"
+                placeholder="Search by title, chapter, subject..." /></label
+            ><select id="subjectFilter">
+              <option value="">All subjects</option>
+              <option>Mathematics</option>
+              <option>Science</option>
+              <option>English</option>
+              <option>Social Science</option></select
+            ><select id="levelFilter">
+              <option value="">All classes</option>
+              <option>Class 6</option>
+              <option>Class 7</option>
+              <option>Class 8</option>
+              <option>Class 9</option>
+              <option>Class 10</option>
+              <option>Class 11</option>
+              <option>Class 12</option>
+            </select>
+          </div>
+          <div class="resource-table" id="resourceTable">
+            <div class="loading">Loading your library...</div>
+          </div>
+        </section>
+        <section class="view empty-view" id="notes">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">REVISION HUB</p>
+              <h1>Chapter-wise notes</h1>
+              <p class="subhead">
+                Upload bite-sized revision notes and mind maps for exam
+                preparation.
+              </p>
+            </div>
+            <button class="primary-btn upload-type" data-type="notes">
+              ＋ Add chapter notes
+            </button>
+          </div>
+          <div class="type-intro lavender-intro">
+            <span>✦</span>
+            <div>
+              <b>Make every chapter easier to revise</b>
+              <p>
+                Attach a PDF, image, or document. Add the exact class, subject,
+                and chapter so students can find it quickly.
+              </p>
+            </div>
+          </div>
+          <div class="resource-table" id="notesTable"></div>
+        </section>
+        <section class="view empty-view" id="pyqs">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">EXAM ARCHIVE</p>
+              <h1>Previous year questions</h1>
+              <p class="subhead">
+                Build a tagged archive of board and competitive exam papers.
+              </p>
+            </div>
+            <button class="primary-btn upload-type" data-type="pyqs">
+              ＋ Add PYQs
+            </button>
+          </div>
+          <div class="type-intro peach-intro">
+            <span>▥</span>
+            <div>
+              <b>Turn past papers into a revision shortcut</b>
+              <p>
+                Capture the year, topic, and marks weightage to make practice
+                more focused.
+              </p>
+            </div>
+          </div>
+          <div class="resource-table" id="pyqsTable"></div>
+        </section>
+        <section class="view empty-view" id="papers">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">PRACTICE MAKER</p>
+              <h1>Sample papers</h1>
+              <p class="subhead">
+                Store mock tests together with their official marking schemes.
+              </p>
+            </div>
+            <button class="primary-btn upload-type" data-type="papers">
+              ＋ Add sample paper
+            </button>
+          </div>
+          <div class="type-intro mint-intro">
+            <span>☑</span>
+            <div>
+              <b>Keep the paper and marking scheme together</b>
+              <p>
+                Upload a mock paper and its answer key or marking scheme as
+                separate files students can download.
+              </p>
+            </div>
+          </div>
+          <div class="resource-table" id="papersTable"></div>
+        </section>
+      </main>
+    </div>
+    <div class="modal-backdrop" id="uploadModal">
+      <div class="modal">
+        <button class="close-btn" id="closeModal">×</button>
+        <p class="eyebrow">ADD TO LIBRARY</p>
+        <h2 id="modalTitle">Upload resource</h2>
+        <p class="modal-copy">
+          Save a resource with enough detail to find it again later.
+        </p>
+        <form id="uploadForm">
+          <input
+            type="hidden"
+            name="category"
+            id="categoryField"
+            value="notes"
+          /><label
+            >Title<input
+              required
+              name="title"
+              placeholder="e.g. Introduction to fractions"
+          /></label>
+          <div class="form-row">
+            <label
+              >Class<select name="classLevel">
+                <option>Class 6</option>
+                <option>Class 7</option>
+                <option>Class 8</option>
+                <option>Class 9</option>
+                <option>Class 10</option>
+                <option>Class 11</option>
+                <option>Class 12</option>
+              </select></label
+            ><label
+              >Subject<select name="subject">
+                <option>Mathematics</option>
+                <option>Science</option>
+                <option>English</option>
+                <option>Social Science</option>
+              </select></label
+            >
+          </div>
+          <div class="form-row">
+            <label
+              >Chapter / topic<input
+                name="chapter"
+                placeholder="e.g. Fractions" /></label
+            ><label
+              >Year <span class="optional">(for PYQs)</span
+              ><input
+                name="year"
+                type="number"
+                min="1900"
+                max="2100"
+                placeholder="2025"
+            /></label>
+          </div>
+          <div class="form-row">
+            <label
+              >Marks <span class="optional">(optional)</span
+              ><input
+                name="marks"
+                type="number"
+                min="0"
+                placeholder="40" /></label
+            ><label
+              >Resource type<select name="fileType">
+                <option value="PDF notes">PDF notes</option>
+                <option value="Mind map">Mind map</option>
+                <option value="Worksheet">Worksheet</option>
+                <option value="Question paper">Question paper</option>
+                <option value="Mock test">Mock test</option>
+              </select></label
+            >
+          </div>
+          <label
+            >File<input
+              required
+              type="file"
+              name="file"
+              id="resourceFile"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" /></label
+          ><label id="markingSchemeLabel" class="scheme-field"
+            >Marking scheme <span class="optional">(optional)</span
+            ><input
+              type="file"
+              name="markingScheme"
+              id="markingScheme"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" /></label
+          ><button class="primary-btn full-btn" id="submitUpload">
+            Save resource
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
