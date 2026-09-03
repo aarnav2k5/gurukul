@@ -36,14 +36,15 @@ $$;
 
 create policy "users can read their profile" on public.profiles for select to authenticated using (id = auth.uid());
 create policy "students and teachers can read resources" on public.resources for select to authenticated using (true);
+create policy "public visitors can read resources" on public.resources for select to anon using (true);
 create policy "teachers can create resources" on public.resources for insert to authenticated with check (public.is_teacher() and owner_id = auth.uid());
 create policy "teachers can update their resources" on public.resources for update to authenticated using (public.is_teacher() and owner_id = auth.uid()) with check (public.is_teacher() and owner_id = auth.uid());
 create policy "teachers can delete their resources" on public.resources for delete to authenticated using (public.is_teacher() and owner_id = auth.uid());
 
-insert into storage.buckets (id, name, public) values ('resources', 'resources', false) on conflict (id) do nothing;
+insert into storage.buckets (id, name, public) values ('resources', 'resources', true) on conflict (id) do update set public = true;
 create policy "signed-in users can download resources" on storage.objects for select to authenticated using (bucket_id = 'resources');
-create policy "teachers can upload resources" on storage.objects for insert to authenticated with check (bucket_id = 'resources' and public.is_teacher());
-create policy "teachers can delete resources" on storage.objects for delete to authenticated using (bucket_id = 'resources' and public.is_teacher());
+create policy "teachers can upload resources" on storage.objects for insert to authenticated with check (bucket_id = 'resources' and public.is_teacher() and (storage.foldername(name))[1] = (select auth.uid()::text));
+create policy "teachers can delete resources" on storage.objects for delete to authenticated using (bucket_id = 'resources' and public.is_teacher() and (storage.foldername(name))[1] = (select auth.uid()::text));
 
 create or replace function public.handle_new_user() returns trigger language plpgsql security definer set search_path = public as $$
 begin insert into public.profiles (id, full_name) values (new.id, coalesce(new.raw_user_meta_data->>'full_name','')); return new; end;
