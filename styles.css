@@ -805,6 +805,7 @@ html[data-theme="dark"] .download:hover { background: #443b69; color: #fff; }
 .category-card strong { display: block; font-size: 14px; line-height: 1.35; }
 .back-choice { border: 0; background: none; color: var(--purple); padding: 0; margin: 0 0 18px; font: 700 12px "DM Sans"; cursor: pointer; }
 .back-choice:hover { color: var(--dark); }
+.view-all-choice { margin-top: -8px; margin-bottom: 20px; }
 .selected-path { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; color: var(--muted); font-size: 12px; }
 .selected-path b { color: var(--ink); font-size: 14px; }
 html[data-theme="dark"] .student-browser { background: var(--surface); box-shadow: 0 14px 34px #0005; }

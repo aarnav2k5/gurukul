@@ -162,12 +162,14 @@ function showStudentBrowser() {
   state.browseCategory = "";
   $("#studentBrowser").classList.remove("hidden");
   $("#libraryResults").classList.add("hidden");
+  $("#viewAllResources").classList.toggle("hidden", state.public);
   $("#subjectChoice").classList.add("hidden");
   $("#categoryChoice").classList.add("hidden");
   $("#classGrid").classList.remove("hidden");
   $("#browserTitle").textContent = "Choose your class";
   $("#browserStep").textContent = "1 of 3";
 }
+$("#viewAllResources").onclick = () => showLibraryResults();
 document.querySelectorAll("[data-class-choice]").forEach((b) =>
   (b.onclick = () => {
     $("#classGrid").classList.add("hidden");
@@ -212,7 +214,10 @@ document.querySelectorAll("[data-view]").forEach(
           n.classList.toggle("active", n.dataset.view === b.dataset.view),
         );
       $(".sidebar").classList.remove("open");
-      if (b.dataset.view === "library" && state.public) showStudentBrowser();
+      if (b.dataset.view === "library") {
+        if (state.public) showStudentBrowser();
+        else showLibraryResults();
+      }
     }),
 );
 document
@@ -318,8 +323,9 @@ fetch("/api/config")
       .single();
     state.teacher = profile.data?.role === "teacher";
     $("#authGate").classList.remove("open");
-    $("#studentBrowser").classList.add("hidden");
-    $("#libraryResults").classList.remove("hidden");
+    $("#libraryHeading").textContent = "Find resources faster.";
+    $("#librarySubhead").textContent = "Choose a class, subject, and resource type — or open the full library.";
+    showStudentBrowser();
     if (!state.teacher)
       document
         .querySelectorAll("#uploadBtn,#sidebarUpload,.upload-type")
