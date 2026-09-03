@@ -4,14 +4,12 @@
   "private": true,
   "description": "Persistent private tuition resource library",
   "scripts": {
-    "build": "node build.mjs",
-    "start": "npm run build && node server.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.114.0",
-    "esbuild": "^0.28.2"
+    "@supabase/supabase-js": "^2.114.0"
   }
 }
