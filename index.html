@@ -18,10 +18,10 @@
         <div class="brand">
           <span class="brand-mark">✦</span><span>Tuition LMS</span>
         </div>
-        <div class="profile">
+        <button class="profile" id="profileButton" type="button">
           <span class="avatar">A</span
           ><span><b>Teacher library</b><small>Private workspace</small></span>
-        </div>
+        </button>
         <p class="nav-label">LIBRARY</p>
         <nav>
           <button class="nav-item active" data-view="library">
@@ -38,17 +38,7 @@
         <button class="nav-item" id="sidebarUpload">
           <span>＋</span> Upload resource
         </button>
-        <div class="sidebar-bottom">
-          <div class="storage">
-            <div>
-              <span>Cloud library storage</span
-              ><b id="storageCount">0 resources</b>
-            </div>
-            <div class="storage-bar"><i id="storageBar"></i></div>
-            <small>Your content is stored securely in Supabase.</small>
-          </div>
-          <button class="nav-item"><span>⚙</span> Settings</button>
-        </div>
+        <div class="sidebar-bottom"><button class="nav-item" id="settingsButton" type="button"><span>⚙</span> Settings</button><button class="nav-item" id="signOutButton" type="button"><span>↪</span> Sign out</button></div>
       </aside>
       <main class="main-content">
         <header class="topbar">
@@ -65,7 +55,7 @@
             <button class="icon-btn" aria-label="Notifications">
               ♢<i></i>
             </button>
-            <div class="top-avatar">A</div>
+            <button class="top-avatar" id="topProfileButton" type="button">A</button>
             <button class="mobile-menu" aria-label="Open menu">☰</button>
           </div>
         </header>
@@ -306,6 +296,7 @@
       </div>
     </div>
     <div class="toast" id="toast"></div>
+    <div class="settings-backdrop" id="settingsPanel"><div class="settings-card"><button class="close-btn" id="closeSettings">×</button><p class="eyebrow">ACCOUNT SETTINGS</p><h2>Settings</h2><p class="modal-copy">Manage your account and library preferences.</p><div class="settings-row"><span><b>Account email</b><small id="settingsEmail">Loading...</small></span></div><div class="settings-row"><span><b>Access level</b><small id="settingsRole">Loading...</small></span></div><button class="secondary-btn full-btn" id="settingsSignOut">Sign out</button></div></div><div class="profile-menu" id="profileMenu"><b id="profileEmail">Account</b><small id="profileRole">Signed in</small><button id="menuSettings">⚙ Settings</button><button id="menuSignOut">↪ Sign out</button></div>
     <div class="auth-backdrop open" id="authGate">
       <div class="auth-card">
         <div class="brand">
