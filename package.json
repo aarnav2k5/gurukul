@@ -11,9 +11,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.114.0"
-  },
-  "devDependencies": {
+    "@supabase/supabase-js": "^2.114.0",
     "esbuild": "^0.28.2"
   }
 }
