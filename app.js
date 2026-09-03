@@ -327,17 +327,25 @@ async function enterAsStudent() {
 $("#studentAccess").onclick = enterAsStudent;
 const savedTheme = localStorage.getItem("gurukul-theme");
 if (savedTheme === "dark") document.documentElement.dataset.theme = "dark";
-$("#themeToggle").onclick = () => {
+function syncThemeControls(dark) {
+  [$("#themeToggle"), $("#authThemeToggle")].forEach((button) => {
+    if (!button) return;
+    button.textContent = dark ? "☀" : "☾";
+    button.setAttribute("aria-pressed", String(dark));
+    if (button.id === "authThemeToggle") {
+      button.innerHTML = `${dark ? "☀" : "☾"} <span>${dark ? "Light mode" : "Dark mode"}</span>`;
+    }
+  });
+}
+function toggleTheme() {
   const dark = document.documentElement.dataset.theme !== "dark";
   document.documentElement.dataset.theme = dark ? "dark" : "";
   localStorage.setItem("gurukul-theme", dark ? "dark" : "light");
-  $("#themeToggle").textContent = dark ? "☀" : "☾";
-  $("#themeToggle").setAttribute("aria-pressed", String(dark));
-};
-if (savedTheme === "dark") {
-  $("#themeToggle").textContent = "☀";
-  $("#themeToggle").setAttribute("aria-pressed", "true");
+  syncThemeControls(dark);
 }
+$("#themeToggle").onclick = toggleTheme;
+$("#authThemeToggle").onclick = toggleTheme;
+syncThemeControls(savedTheme === "dark");
 $("#globalSearch").addEventListener("input", (e) => {
   $("#resourceSearch").value = e.target.value;
   $("#library").classList.add("active-view");
