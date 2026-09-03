@@ -6,6 +6,12 @@ const ROOT = __dirname,
   DATA = path.join(ROOT, "data"),
   UPLOADS = path.join(DATA, "uploads"),
   DB = path.join(DATA, "resources.json");
+if (fs.existsSync(path.join(ROOT, ".env"))) {
+  for (const line of fs.readFileSync(path.join(ROOT, ".env"), "utf8").split(/\r?\n/)) {
+    const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (match && !process.env[match[1]]) process.env[match[1]] = match[2];
+  }
+}
 fs.mkdirSync(UPLOADS, { recursive: true });
 if (!fs.existsSync(DB)) fs.writeFileSync(DB, "[]");
 const mime = {
@@ -68,6 +74,11 @@ function json(res, status, data) {
 }
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  if (req.method === "GET" && url.pathname === "/api/config")
+    return json(res, 200, {
+      supabaseUrl: process.env.SUPABASE_URL || "",
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "",
+    });
   if (req.method === "GET" && url.pathname === "/api/resources")
     return json(res, 200, db());
   if (req.method === "POST" && url.pathname === "/api/resources") {

@@ -21,7 +21,7 @@ A private tuition resource library for chapter notes, previous-year questions, a
 6. Set the Supabase Auth Site URL and redirect URLs to your production domain.
 7. Add a custom domain and enable HTTPS at the host.
 
-The current browser uses the local API and `data/` folder when Supabase variables are not present, which makes local development easy. Before inviting students, the frontend auth/storage adapter should be enabled against the Supabase project and the local fallback should remain disabled in production.
+The browser uses Supabase automatically when `SUPABASE_URL` and `SUPABASE_ANON_KEY` are present. Without those variables it falls back to the local API and `data/` folder for development.
 
 ## Local development
 
