@@ -1,4 +1,4 @@
-const state = { resources: [], category: "notes", user: null, teacher: false };
+const state = { resources: [], category: "notes", browseCategory: "", user: null, teacher: false };
 const $ = (s) => document.querySelector(s);
 const esc = (v) =>
   String(v ?? "").replace(
@@ -32,10 +32,11 @@ function render() {
     filtered = state.resources.filter(
       (r) =>
         `${r.title} ${r.chapter || ""} ${r.subject} ${r.classLevel} ${r.year || ""}`
-          .toLowerCase()
+        .toLowerCase()
           .includes(q) &&
         (!sub || r.subject === sub) &&
-        (!level || r.classLevel === level),
+        (!level || r.classLevel === level) &&
+        (!state.browseCategory || r.category === state.browseCategory),
     );
   $("#resourceTable").innerHTML = resourceRows(filtered);
   ["notes", "pyqs", "papers"].forEach((c) => {
@@ -148,6 +149,56 @@ function fileData(file) {
     reader.readAsDataURL(file);
   });
 }
+function showLibraryResults(classLevel = "", subject = "", category = "") {
+  state.browseCategory = category;
+  $("#studentBrowser").classList.add("hidden");
+  $("#libraryResults").classList.remove("hidden");
+  $("#levelFilter").value = classLevel;
+  $("#subjectFilter").value = subject;
+  $("#selectedPathText").textContent = [classLevel, subject, category ? fileType[category] : ""].filter(Boolean).join(" · ") || "All resources";
+  render();
+}
+function showStudentBrowser() {
+  state.browseCategory = "";
+  $("#studentBrowser").classList.remove("hidden");
+  $("#libraryResults").classList.add("hidden");
+  $("#subjectChoice").classList.add("hidden");
+  $("#categoryChoice").classList.add("hidden");
+  $("#classGrid").classList.remove("hidden");
+  $("#browserTitle").textContent = "Choose your class";
+  $("#browserStep").textContent = "1 of 3";
+}
+document.querySelectorAll("[data-class-choice]").forEach((b) =>
+  (b.onclick = () => {
+    $("#classGrid").classList.add("hidden");
+    $("#subjectChoice").classList.remove("hidden");
+    $("#categoryChoice").classList.add("hidden");
+    $("#browserTitle").textContent = `${b.dataset.classChoice}: choose a subject`;
+    $("#browserStep").textContent = "2 of 3";
+    $("#backToClasses").dataset.classChoice = b.dataset.classChoice;
+  }),
+);
+document.querySelectorAll("[data-subject-choice]").forEach((b) =>
+  (b.onclick = () => {
+    $("#subjectChoice").classList.add("hidden");
+    $("#categoryChoice").classList.remove("hidden");
+    $("#browserTitle").textContent = `${$("#backToClasses").dataset.classChoice} · ${b.dataset.subjectChoice}: choose resources`;
+    $("#browserStep").textContent = "3 of 3";
+    $("#backToSubjects").dataset.classChoice = $("#backToClasses").dataset.classChoice;
+    $("#backToSubjects").dataset.subjectChoice = b.dataset.subjectChoice;
+  }),
+);
+document.querySelectorAll("[data-category-choice]").forEach((b) =>
+  (b.onclick = () =>
+    showLibraryResults($("#backToSubjects").dataset.classChoice, $("#backToSubjects").dataset.subjectChoice, b.dataset.categoryChoice)),
+);
+$("#backToSubjects").onclick = () => {
+  $("#categoryChoice").classList.add("hidden");
+  $("#subjectChoice").classList.remove("hidden");
+  $("#browserTitle").textContent = `${$("#backToSubjects").dataset.classChoice}: choose a subject`;
+  $("#browserStep").textContent = "2 of 3";
+};
+$("#backToClasses").onclick = () => showStudentBrowser();
 document.querySelectorAll("[data-view]").forEach(
   (b) =>
     (b.onclick = () => {
@@ -161,6 +212,7 @@ document.querySelectorAll("[data-view]").forEach(
           n.classList.toggle("active", n.dataset.view === b.dataset.view),
         );
       $(".sidebar").classList.remove("open");
+      if (b.dataset.view === "library" && state.public) showStudentBrowser();
     }),
 );
 document
@@ -248,6 +300,13 @@ fetch("/api/config")
     supabaseClient = window.createSupabaseClient(
       cfg.supabaseUrl,
       cfg.supabaseAnonKey,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false,
+        },
+      },
     );
     const session = await supabaseClient.auth.getSession();
     if (!session.data.session) return showAuth();
@@ -259,6 +318,8 @@ fetch("/api/config")
       .single();
     state.teacher = profile.data?.role === "teacher";
     $("#authGate").classList.remove("open");
+    $("#studentBrowser").classList.add("hidden");
+    $("#libraryResults").classList.remove("hidden");
     if (!state.teacher)
       document
         .querySelectorAll("#uploadBtn,#sidebarUpload,.upload-type")
@@ -318,6 +379,12 @@ async function enterAsStudent() {
   $("#profileButton").innerHTML =
     "A<span><strong>Student access</strong><small>Public library</small></span>";
   $("#topProfileButton").style.display = "none";
+  document
+    .querySelectorAll('[data-view]:not([data-view="library"])')
+    .forEach((x) => (x.style.display = "none"));
+  $("#libraryHeading").textContent = "Find what you need to learn.";
+  $("#librarySubhead").textContent = "Choose your class and subject to open notes, PYQs, and sample papers.";
+  showStudentBrowser();
   try {
     await load();
   } catch (e) {

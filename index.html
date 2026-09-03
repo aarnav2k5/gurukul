@@ -64,8 +64,8 @@
           <div class="page-heading">
             <div>
               <p class="eyebrow">YOUR RESOURCE LIBRARY</p>
-              <h1>Teach from your best work.</h1>
-              <p class="subhead">
+                <h1 id="libraryHeading">Teach from your best work.</h1>
+                <p class="subhead" id="librarySubhead">
                 Keep revision notes, PYQs, and sample papers in one searchable
                 place.
               </p>
@@ -98,6 +98,44 @@
               </div>
             </article>
           </div>
+          <div class="student-browser hidden" id="studentBrowser">
+            <div class="browser-heading">
+              <div>
+                <p class="eyebrow">START HERE</p>
+                <h2 id="browserTitle">Choose your class</h2>
+                <p class="subhead">Select your class and subject to find the right study material.</p>
+              </div>
+              <span class="browser-step" id="browserStep">1 of 2</span>
+            </div>
+            <div class="choice-grid class-grid" id="classGrid">
+              <button class="choice-card" data-class-choice="Class 6">Class 6<span>Notes &amp; practice</span></button>
+              <button class="choice-card" data-class-choice="Class 7">Class 7<span>Notes &amp; practice</span></button>
+              <button class="choice-card" data-class-choice="Class 8">Class 8<span>Notes &amp; practice</span></button>
+              <button class="choice-card" data-class-choice="Class 9">Class 9<span>Notes &amp; practice</span></button>
+              <button class="choice-card" data-class-choice="Class 10">Class 10<span>Notes &amp; practice</span></button>
+              <button class="choice-card" data-class-choice="Class 11">Class 11<span>Notes &amp; practice</span></button>
+              <button class="choice-card" data-class-choice="Class 12">Class 12<span>Notes &amp; practice</span></button>
+            </div>
+            <div class="subject-choice hidden" id="subjectChoice">
+              <button class="back-choice" id="backToClasses" type="button">← Change class</button>
+              <div class="choice-grid subject-grid">
+                <button class="choice-card" data-subject-choice="Mathematics">Mathematics<span>Formulas &amp; questions</span></button>
+                <button class="choice-card" data-subject-choice="Science">Science<span>Concepts &amp; diagrams</span></button>
+                <button class="choice-card" data-subject-choice="English">English<span>Grammar &amp; literature</span></button>
+                <button class="choice-card" data-subject-choice="Social Science">Social Science<span>History &amp; civics</span></button>
+              </div>
+            </div>
+            <div class="category-choice hidden" id="categoryChoice">
+              <button class="back-choice" id="backToSubjects" type="button">← Change subject</button>
+              <div class="choice-grid category-grid">
+                <button class="choice-card category-card" data-category-choice="notes"><strong>✎ Chapter Notes</strong><span>Revision notes and mind maps</span></button>
+                <button class="choice-card category-card" data-category-choice="pyqs"><strong>▥ Previous Year Questions</strong><span>Past papers and important questions</span></button>
+                <button class="choice-card category-card" data-category-choice="papers"><strong>☑ Sample Papers</strong><span>Mock tests and marking schemes</span></button>
+              </div>
+            </div>
+          </div>
+          <div id="libraryResults" class="library-results hidden">
+          <div class="selected-path" id="selectedPath"><span>Library</span><b id="selectedPathText">All resources</b></div>
           <div class="toolbar">
             <label class="search inner-search"
               ><span>⌕</span
@@ -123,6 +161,7 @@
           </div>
           <div class="resource-table" id="resourceTable">
             <div class="loading">Loading your library...</div>
+          </div>
           </div>
         </section>
         <section class="view empty-view" id="notes">
