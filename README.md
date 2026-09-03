@@ -4,7 +4,7 @@ A private tuition resource library for chapter notes, previous-year questions, a
 
 ## What is included
 
-- Persistent local development server with file uploads
+- Supabase-backed authentication, database records, and private file uploads
 - Postgres schema for Supabase
 - Teacher/student roles with Row Level Security
 - Private Supabase Storage bucket for documents
@@ -21,7 +21,7 @@ A private tuition resource library for chapter notes, previous-year questions, a
 6. Set the Supabase Auth Site URL and redirect URLs to your production domain.
 7. Add a custom domain and enable HTTPS at the host.
 
-The browser uses Supabase automatically when `SUPABASE_URL` and `SUPABASE_ANON_KEY` are present. Without those variables it falls back to the local API and `data/` folder for development.
+The browser requires Supabase configuration and does not use local file storage. Supabase is the only source of truth for users, resources, and uploaded files.
 
 ## Local development
 
