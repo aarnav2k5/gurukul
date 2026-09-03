@@ -1,4 +1,4 @@
-# Gurukul Library
+# Tuition LMS
 
 A private tuition resource library for chapter notes, previous-year questions, and sample papers with marking schemes.
 
