@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "./components/ui/button";
 import { Spotlight } from "./components/ui/spotlight";
+import { useLiveAudience } from "./hooks/useLiveAudience";
 import {
   BookOpen,
   ClipboardList,
@@ -24,6 +25,7 @@ import {
   Sun,
   Trash2,
   Upload,
+  Users,
   X,
 } from "lucide-react";
 
@@ -59,6 +61,7 @@ function App() {
   const [client, setClient] = useState(null),
     [supabaseConfig, setSupabaseConfig] = useState(null),
     [user, setUser] = useState(null),
+    [teacherName, setTeacherName] = useState(""),
     [teacher, setTeacher] = useState(false),
     [student, setStudent] = useState(false),
     [resources, setResources] = useState([]),
@@ -114,10 +117,11 @@ function App() {
           setUser(session.data.session.user);
           const profile = await db
             .from("profiles")
-            .select("role")
+            .select("role,full_name")
             .eq("id", session.data.session.user.id)
             .single();
           setTeacher(profile.data?.role === "teacher");
+          setTeacherName(profile.data?.full_name || "");
           await load(db, false);
         } else setLoading(false);
       })
@@ -249,6 +253,13 @@ function App() {
     await client.auth.signOut();
     location.reload();
   }
+  const { studentsOnline, teachersOnline } = useLiveAudience({
+    client,
+    user,
+    teacher,
+    student,
+    teacherName,
+  });
   const filtered = useMemo(
     () =>
       resources.filter(
@@ -613,6 +624,19 @@ function App() {
               </div>
             ))}
           </div>
+          {!student && teacher && (
+            <div className="live-activity">
+              <div className="live-activity-heading">
+                <span className="live-indicator"><i /> Live activity</span>
+                <small>Updates automatically</small>
+              </div>
+              <div className="live-activity-grid">
+                <div><Users size={18} /><span><b>{studentsOnline}</b><small>students viewing now</small></span></div>
+                <div><Users size={18} /><span><b>{teachersOnline.length}</b><small>teachers online</small></span></div>
+              </div>
+              {teachersOnline.length > 0 && <div className="teacher-presence">{teachersOnline.map((item) => <span key={item.id}><i />{item.name}</span>)}</div>}
+            </div>
+          )}
           {step < 4 ? (
             <Guided
               step={step}

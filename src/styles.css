@@ -140,6 +140,21 @@ html:not([data-theme=dark]) .student-button:focus-visible{
   transform:none!important;
 }
 html:not([data-theme=dark]) .student-button:hover{background:#f7f5ff!important;border-color:#b9aceb!important}
+.live-activity{margin:0 0 24px;padding:17px;border:1px solid #e8e4f2;border-radius:14px;background:linear-gradient(135deg,#fbfaff,#fff);box-shadow:0 8px 24px rgba(48,38,74,.05)}
+.live-activity-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.live-indicator{display:inline-flex;align-items:center;gap:7px;color:#39334b;font-size:12px;font-weight:800}
+.live-indicator i,.teacher-presence i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#35af78;box-shadow:0 0 0 4px #35af7820}
+.live-activity-heading small{color:#9a95a8;font-size:10px}
+.live-activity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.live-activity-grid>div{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #eeeaf5;border-radius:10px;color:#7665d5}
+.live-activity-grid b,.live-activity-grid small{display:block}.live-activity-grid b{color:#39334b;font-size:20px}.live-activity-grid small{margin-top:2px;color:#9690a4;font-size:10px}
+.teacher-presence{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}.teacher-presence span{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border-radius:99px;background:#f0fbf5;color:#398265;font-size:10px;font-weight:750}.teacher-presence i{width:6px;height:6px;box-shadow:none}
+html[data-theme=dark] .live-activity{border-color:#3b354c;background:linear-gradient(135deg,#211e2d,#252137)}
+html[data-theme=dark] .live-indicator,html[data-theme=dark] .live-activity-grid b{color:#ebe6f7}
+html[data-theme=dark] .live-activity-grid>div{border-color:#443c58}.live-activity-grid small,html[data-theme=dark] .live-activity-heading small{color:#aaa5ba}
+html[data-theme=dark] .teacher-presence{background:transparent}.teacher-presence span{background:#203c34;color:#a8e6c9}
+@media(max-width:680px){.live-activity-grid{grid-template-columns:1fr 1fr}.live-activity{padding:14px}}
+@media(max-width:420px){.live-activity-grid{grid-template-columns:1fr}.live-activity-heading{align-items:flex-start;flex-direction:column;gap:7px}}
 .auth-screen{position:relative;isolation:isolate;overflow:hidden}
 .auth-screen::before,.auth-screen::after{content:"";position:absolute;z-index:0;width:34vw;height:34vw;min-width:220px;min-height:220px;border-radius:50%;filter:blur(10px);pointer-events:none;opacity:.55;animation:auth-float 12s ease-in-out infinite alternate}
 .auth-screen::before{top:-12vw;left:-8vw;background:radial-gradient(circle,rgba(139,92,246,.2),transparent 68%)}
