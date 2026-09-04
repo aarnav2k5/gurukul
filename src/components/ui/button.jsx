@@ -20,7 +20,7 @@ const buttonVariants = cva(
   },
 );
 
-export function Button({ className, variant, size, ...props }) {
+export function Button({ className = "", variant = "primary", size = "default", ...props }) {
   return (
     <button
       className={cn(buttonVariants({ variant, size }), className)}
