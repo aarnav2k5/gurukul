@@ -87,3 +87,29 @@ html[data-theme=dark] .app-shell::before{background:radial-gradient(700px circle
   .download{min-width:130px}
   .scheme{flex:1;text-align:center}
 }
+.breadcrumbs{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-bottom:9px;color:#9993aa;font-size:11px}
+.breadcrumbs button{border:0;padding:0;background:transparent;color:#7665d5;font:inherit;font-weight:750}
+.breadcrumbs b{color:#615b73;font-weight:700}
+.edit{border:0;background:transparent;color:#7665d5;font-size:11px;font-weight:750;white-space:nowrap}
+.clear-filters{align-self:center;border:0;background:transparent;color:#7665d5;font-size:11px;font-weight:750;white-space:nowrap}
+.restore{border:1px solid #ded9f6;border-radius:7px;padding:7px 9px;background:#fff;color:#6856c7;font-size:11px;font-weight:750;white-space:nowrap}
+.trash-list{display:grid;gap:8px;margin-top:21px}
+.trash-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e9e6f1;border-radius:10px}
+.trash-row b,.trash-row small{display:block}
+.trash-row b{overflow:hidden;color:#39334b;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.trash-row small{margin-top:4px;color:#9690a4;font-size:10px}
+.empty.compact{min-height:130px}
+.mobile-bottom-nav{display:none}
+html[data-theme=dark] .breadcrumbs b,html[data-theme=dark] .trash-row b{color:#ebe6f7}
+html[data-theme=dark] .restore,.dark .restore{border-color:#554b6f;background:#2a2638;color:#d0c8ff}
+html[data-theme=dark] .trash-row{border-color:#3b354c}
+@media(max-width:680px){
+  .breadcrumbs{margin-bottom:8px}
+  .mobile-bottom-nav{position:fixed;z-index:15;right:10px;bottom:10px;left:10px;display:flex;justify-content:space-around;gap:6px;padding:8px;border:1px solid #e4e0ef;border-radius:14px;background:rgba(255,255,255,.9);box-shadow:0 12px 35px rgba(42,31,74,.14);backdrop-filter:blur(18px)}
+  .mobile-bottom-nav button{display:flex;flex:1;align-items:center;justify-content:center;gap:6px;border:0;border-radius:9px;padding:9px 5px;background:transparent;color:#716987;font-size:11px;font-weight:750}
+  .mobile-bottom-nav button:first-child{background:#eeeaff;color:#6552c3}
+  html[data-theme=dark] .mobile-bottom-nav{border-color:#443c58;background:rgba(33,30,45,.92)}
+  html[data-theme=dark] .mobile-bottom-nav button{color:#aaa5ba}
+  html[data-theme=dark] .mobile-bottom-nav button:first-child{background:#302a4d;color:#d0c8ff}
+  .page{padding-bottom:90px}
+}

@@ -24,6 +24,10 @@ create table public.resources (
   file_path text not null unique,
   marking_scheme_name text,
   marking_scheme_path text,
+  file_size bigint,
+  marking_scheme_size bigint,
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
   created_at timestamptz not null default now()
 );
 

@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -57,6 +58,12 @@ const readFile = (file) =>
     reader.readAsDataURL(file);
   });
 const safeName = (name) => name.replace(/[^a-zA-Z0-9._-]/g, "-");
+const formatBytes = (bytes) => {
+  if (!bytes) return "Size unavailable";
+  const units = ["B", "KB", "MB", "GB"];
+  const power = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** power).toFixed(power ? 1 : 0)} ${units[power]}`;
+};
 const cn = (...xs) => xs.filter(Boolean).join(" ");
 
 function App() {
@@ -65,6 +72,7 @@ function App() {
     [teacher, setTeacher] = useState(false),
     [student, setStudent] = useState(false),
     [resources, setResources] = useState([]),
+    [deletedResources, setDeletedResources] = useState([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
   const [theme, setTheme] = useState(() =>
@@ -79,7 +87,11 @@ function App() {
     [query, setQuery] = useState(""),
     [subject, setSubject] = useState(""),
     [level, setLevel] = useState(""),
+    [chapter, setChapter] = useState(""),
+    [year, setYear] = useState(""),
     [upload, setUpload] = useState(false),
+    [editing, setEditing] = useState(null),
+    [showTrash, setShowTrash] = useState(false),
     [settings, setSettings] = useState(false),
     [mobileMenu, setMobileMenu] = useState(false),
     [toast, setToast] = useState("");
@@ -131,13 +143,14 @@ function App() {
     const result = await db
       .from("resources")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     if (result.error) {
       notify(result.error.message);
       return;
     }
-    const rows = await Promise.all(
-      (result.data || []).map(async (r) => {
+    const mapRows = async (data) => Promise.all(
+      (data || []).map(async (r) => {
         const url = publicMode
           ? db.storage.from("resources").getPublicUrl(r.file_path).data
               .publicUrl
@@ -166,7 +179,16 @@ function App() {
         };
       }),
     );
+    const rows = await mapRows(result.data);
     setResources(rows);
+    if (!publicMode) {
+      const trash = await db
+        .from("resources")
+        .select("*")
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+      if (!trash.error) setDeletedResources(await mapRows(trash.data));
+    }
     setLoading(false);
   }
   function notify(message) {
@@ -201,9 +223,11 @@ function App() {
             .includes(query.toLowerCase()) &&
           (!subject || r.subject === subject) &&
           (!level || r.classLevel === level) &&
+          (!chapter || r.chapter === chapter) &&
+          (!year || String(r.year || "") === year) &&
           (!pickedType || r.category === pickedType),
       ),
-    [resources, query, subject, level, pickedType],
+    [resources, query, subject, level, chapter, year, pickedType],
   );
   const counts = useMemo(
     () =>
@@ -219,24 +243,38 @@ function App() {
     setPickedClass("");
     setPickedSubject("");
     setPickedType("");
+    setChapter("");
+    setYear("");
+    setShowTrash(false);
     setStep(1);
   };
   const showResults = (type = "") => {
     setPickedType(type);
     setLevel(pickedClass);
     setSubject(pickedSubject);
+    setChapter("");
     setStep(4);
   };
   async function remove(r) {
     if (!confirm("Delete this resource?")) return;
-    const storage = await client.storage
+    const deleted = await client
       .from("resources")
-      .remove([r.file_path, r.marking_scheme_path].filter(Boolean));
-    if (storage.error) return notify(storage.error.message);
-    const deleted = await client.from("resources").delete().eq("id", r.id);
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", r.id);
     if (deleted.error) return notify(deleted.error.message);
     setResources((rs) => rs.filter((x) => x.id !== r.id));
-    notify("Resource deleted");
+    setDeletedResources((rs) => [{ ...r, deletedAt: new Date().toISOString() }, ...rs]);
+    notify("Resource moved to Recently deleted");
+  }
+  async function restore(r) {
+    const result = await client
+      .from("resources")
+      .update({ deleted_at: null, updated_at: new Date().toISOString() })
+      .eq("id", r.id);
+    if (result.error) return notify(result.error.message);
+    setDeletedResources((rs) => rs.filter((x) => x.id !== r.id));
+    await load(client, false);
+    notify("Resource restored");
   }
   async function saveUpload(e) {
     e.preventDefault();
@@ -249,6 +287,18 @@ function App() {
       path = `${base}-${safeName(file.name)}`,
       schemePath = scheme ? `${base}-scheme-${safeName(scheme.name)}` : null;
     try {
+      const duplicate = await client
+        .from("resources")
+        .select("id,title")
+        .eq("owner_id", user.id)
+        .is("deleted_at", null)
+        .eq("file_name", file.name)
+        .eq("file_size", f.get("file").size)
+        .limit(1);
+      if (duplicate.error) throw duplicate.error;
+      if (duplicate.data?.length) {
+        return notify(`This file is already uploaded as “${duplicate.data[0].title}”`);
+      }
       let result = await client.storage.from("resources").upload(
         path,
         Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0)),
@@ -273,9 +323,11 @@ function App() {
         year: f.get("year") ? Number(f.get("year")) : null,
         marks: f.get("marks") ? Number(f.get("marks")) : null,
         file_name: file.name,
+        file_size: f.get("file").size,
         file_path: path,
         marking_scheme_name: scheme?.name || null,
         marking_scheme_path: schemePath,
+        marking_scheme_size: f.get("scheme")?.size || null,
       });
       if (insert.error) throw insert.error;
       setUpload(false);
@@ -283,6 +335,66 @@ function App() {
       notify("Resource saved");
     } catch (err) {
       notify(err.message || "Could not save resource");
+    }
+  }
+  async function saveEdit(e) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const replacementFile = f.get("file");
+    const replacementSchemeFile = f.get("scheme");
+    const replacement = await readFile(replacementFile?.size ? replacementFile : null);
+    const replacementScheme = await readFile(replacementSchemeFile?.size ? replacementSchemeFile : null);
+    const old = editing;
+    const keepScheme = f.get("category") === "papers";
+    let nextPath = old.file_path;
+    let nextSchemePath = keepScheme ? old.marking_scheme_path : null;
+    const uploaded = [];
+    try {
+      if (replacement) {
+        nextPath = `${user.id}/${old.id}-${crypto.randomUUID()}-${safeName(replacement.name)}`;
+        const result = await client.storage.from("resources").upload(
+          nextPath,
+          Uint8Array.from(atob(replacement.data), (c) => c.charCodeAt(0)),
+          { contentType: replacement.type || "application/octet-stream" },
+        );
+        if (result.error) throw result.error;
+        uploaded.push(nextPath);
+      }
+      if (replacementScheme) {
+        nextSchemePath = `${user.id}/${old.id}-scheme-${crypto.randomUUID()}-${safeName(replacementScheme.name)}`;
+        const result = await client.storage.from("resources").upload(
+          nextSchemePath,
+          Uint8Array.from(atob(replacementScheme.data), (c) => c.charCodeAt(0)),
+          { contentType: replacementScheme.type || "application/octet-stream" },
+        );
+        if (result.error) throw result.error;
+        uploaded.push(nextSchemePath);
+      }
+      const result = await client.from("resources").update({
+        title: f.get("title"),
+        class_level: f.get("classLevel"),
+        subject: f.get("subject"),
+        chapter: f.get("chapter"),
+        category: f.get("category"),
+        year: f.get("year") ? Number(f.get("year")) : null,
+        marks: f.get("marks") ? Number(f.get("marks")) : null,
+        file_name: replacement?.name || old.file_name,
+        file_size: replacement ? f.get("file").size : old.file_size,
+        file_path: nextPath,
+        marking_scheme_name: keepScheme ? replacementScheme?.name || old.marking_scheme_name : null,
+        marking_scheme_size: keepScheme ? replacementScheme ? f.get("scheme").size : old.marking_scheme_size : null,
+        marking_scheme_path: nextSchemePath,
+        updated_at: new Date().toISOString(),
+      }).eq("id", old.id);
+      if (result.error) throw result.error;
+      const oldPaths = [replacement && old.file_path, (replacementScheme || !keepScheme) && old.marking_scheme_path].filter(Boolean);
+      if (oldPaths.length) await client.storage.from("resources").remove(oldPaths);
+      setEditing(null);
+      await load(client, false);
+      notify("Resource updated");
+    } catch (err) {
+      if (uploaded.length) await client.storage.from("resources").remove(uploaded);
+      notify(err.message || "Could not update resource");
     }
   }
   if (!client && loading)
@@ -358,6 +470,14 @@ function App() {
               text="Sample papers"
               onClick={() => {
                 setPickedType("papers");
+                setStep(4);
+              }}
+            />
+            <Nav
+              icon={Trash2}
+              text={`Recently deleted${deletedResources.length ? ` (${deletedResources.length})` : ""}`}
+              onClick={() => {
+                setShowTrash(true);
                 setStep(4);
               }}
             />
@@ -472,19 +592,24 @@ function App() {
             />
           ) : (
             <Results
-              resources={filtered}
+      resources={filtered}
               category={categoryName}
               loading={loading}
               query={query}
               setQuery={setQuery}
               subject={subject}
               setSubject={setSubject}
-              level={level}
-              setLevel={setLevel}
-              teacher={teacher}
-              onDelete={remove}
-              onBack={browse}
-            />
+      level={level}
+      setLevel={setLevel}
+      chapter={chapter}
+      setChapter={setChapter}
+      year={year}
+      setYear={setYear}
+      teacher={teacher}
+      onDelete={remove}
+      onEdit={setEditing}
+      onBack={browse}
+    />
           )}
         </section>
       </main>
@@ -492,7 +617,7 @@ function App() {
         {upload && (
           <UploadModal onClose={() => setUpload(false)} onSubmit={saveUpload} />
         )}
-        {settings && (
+      {settings && (
           <SettingsModal
             user={user}
             onClose={() => setSettings(false)}
@@ -500,6 +625,25 @@ function App() {
           />
         )}
       </AnimatePresence>
+      {editing && (
+        <EditResourceModal
+          resource={editing}
+          onClose={() => setEditing(null)}
+          onSubmit={saveEdit}
+        />
+      )}
+      {!student && showTrash && (
+        <TrashModal
+          resources={deletedResources}
+          onClose={() => setShowTrash(false)}
+          onRestore={restore}
+        />
+      )}
+      <nav className="mobile-bottom-nav" aria-label="Quick navigation">
+        <button onClick={browse}><Library size={17} /> Browse</button>
+        {!student && <button onClick={() => setUpload(true)}><Upload size={17} /> Upload</button>}
+        {!student && <button onClick={() => setSettings(true)}><Settings size={17} /> Settings</button>}
+      </nav>
       <div className={cn("toast", toast && "show")}>{toast}</div>
     </motion.div>
   );
@@ -662,8 +806,13 @@ function Results({
   setSubject,
   level,
   setLevel,
+  chapter,
+  setChapter,
+  year,
+  setYear,
   teacher,
   onDelete,
+  onEdit,
   onBack,
 }) {
   return (
@@ -673,6 +822,10 @@ function Results({
       </button>
       <div className="results-heading">
         <div>
+          <div className="breadcrumbs">
+            <button onClick={onBack}>Library</button><span>›</span>
+            <b>{level || "All classes"}</b>{subject && <><span>›</span><b>{subject}</b></>}
+          </div>
           <h2>{category}</h2>
           <p className="subhead">
             {resources.length} resource{resources.length === 1 ? "" : "s"} found
@@ -700,6 +853,23 @@ function Results({
             <option key={x}>{x}</option>
           ))}
         </select>
+        <select value={chapter} onChange={(e) => setChapter(e.target.value)}>
+          <option value="">All chapters</option>
+          {[...new Set(resources.map((r) => r.chapter).filter(Boolean))].sort().map((x) => (
+            <option key={x}>{x}</option>
+          ))}
+        </select>
+        <select value={year} onChange={(e) => setYear(e.target.value)}>
+          <option value="">All years</option>
+          {[...new Set(resources.map((r) => r.year).filter(Boolean))].sort((a, b) => b - a).map((x) => (
+            <option key={x}>{x}</option>
+          ))}
+        </select>
+        {(query || subject || level || chapter || year) && (
+          <button className="clear-filters" onClick={() => { setQuery(""); setSubject(""); setLevel(""); setChapter(""); setYear(""); }}>
+            Clear filters
+          </button>
+        )}
       </div>
       {loading ? (
         <div className="empty">Loading resources…</div>
@@ -715,7 +885,7 @@ function Results({
                 delay: Math.min(index * 0.035, 0.3),
               }}
             >
-              <Resource r={r} teacher={teacher} onDelete={onDelete} />
+              <Resource r={r} teacher={teacher} onDelete={onDelete} onEdit={onEdit} />
             </motion.div>
           ))}
         </div>
@@ -723,13 +893,13 @@ function Results({
         <div className="empty">
           <BookOpen size={25} />
           <b>No resources found</b>
-          <span>Try another class, subject, or resource type.</span>
+          <span>{chapter ? "This chapter has no resources yet." : "Try another class, subject, chapter, or resource type."}</span>
         </div>
       )}
     </div>
   );
 }
-function Resource({ r, teacher, onDelete }) {
+function Resource({ r, teacher, onDelete, onEdit }) {
   const Icon = ICONS[r.category] || FileText;
   return (
     <article className="resource">
@@ -746,7 +916,7 @@ function Resource({ r, teacher, onDelete }) {
           {r.chapter ? ` · ${r.chapter}` : ""}
         </p>
         <small>
-          {r.fileName} ·{" "}
+          {r.fileName} · {formatBytes(r.file_size)} ·{" "}
           {new Date(r.createdAt).toLocaleDateString("en-IN", {
             day: "2-digit",
             month: "short",
@@ -774,9 +944,12 @@ function Resource({ r, teacher, onDelete }) {
           </a>
         )}
         {teacher && (
-          <button className="delete" onClick={() => onDelete(r)}>
-            <X size={16} />
-          </button>
+          <>
+            <button className="edit" onClick={() => onEdit(r)}>Edit</button>
+            <button className="delete" aria-label={`Delete ${r.title}`} onClick={() => onDelete(r)}>
+              <X size={16} />
+            </button>
+          </>
         )}
       </div>
     </article>
@@ -886,6 +1059,53 @@ function UploadModal({ onClose, onSubmit }) {
             <Upload size={15} /> Save resource
           </button>
         </form>
+      </motion.div>
+    </motion.div>
+  );
+}
+function EditResourceModal({ resource, onClose, onSubmit }) {
+  const [classLevel, setClassLevel] = useState(resource.classLevel);
+  const [category, setCategory] = useState(resource.category);
+  const subjectOptions = subjectsFor(classLevel);
+  return (
+    <motion.div className="overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <motion.div className="modal" initial={{ opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }}>
+        <button className="close" onClick={onClose}><X size={19} /></button>
+        <p className="eyebrow">MANAGE RESOURCE</p>
+        <h2>Edit resource</h2>
+        <p className="subhead">Update details or optionally replace the uploaded files.</p>
+        <form onSubmit={onSubmit}>
+          <input type="hidden" name="id" value={resource.id} />
+          <label>Title<input name="title" defaultValue={resource.title} required /></label>
+          <div className="form-grid">
+            <label>Class<select name="classLevel" value={classLevel} onChange={(e) => setClassLevel(e.target.value)}>{CLASSES.map((x) => <option key={x}>{x}</option>)}</select></label>
+            <label>Subject<select name="subject" defaultValue={resource.subject} key={classLevel}>{subjectOptions.map((x) => <option key={x}>{x}</option>)}</select></label>
+          </div>
+          <label>Chapter / topic<input name="chapter" defaultValue={resource.chapter} /></label>
+          <div className="form-grid">
+            <label>Resource type<select name="category" value={category} onChange={(e) => setCategory(e.target.value)}>{Object.entries(TYPES).map(([k, v]) => <option value={k} key={k}>{v}</option>)}</select></label>
+            <label>Replace main file<input name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" /></label>
+          </div>
+          <div className="form-grid">
+            <label>Year<input name="year" type="number" defaultValue={resource.year || ""} /></label>
+            <label>Marks<input name="marks" type="number" defaultValue={resource.marks || ""} /></label>
+          </div>
+          {category === "papers" && <label>Replace marking scheme<input name="scheme" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" /></label>}
+          <Button className="primary full">Save changes</Button>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+}
+function TrashModal({ resources, onClose, onRestore }) {
+  return (
+    <motion.div className="overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <motion.div className="modal small" initial={{ opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }}>
+        <button className="close" onClick={onClose}><X size={19} /></button>
+        <p className="eyebrow">TEACHER TOOLS</p>
+        <h2>Recently deleted</h2>
+        <p className="subhead">Restore resources without re-uploading their files.</p>
+        {resources.length ? <div className="trash-list">{resources.map((r) => <div className="trash-row" key={r.id}><span><b>{r.title}</b><small>{r.classLevel} · {r.subject}</small></span><button className="restore" onClick={() => onRestore(r)}>Restore</button></div>)}</div> : <div className="empty compact"><Trash2 size={24} /><b>Nothing deleted</b><span>Deleted resources will appear here.</span></div>}
       </motion.div>
     </motion.div>
   );

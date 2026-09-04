@@ -15,12 +15,13 @@ A private tuition resource library for chapter notes, previous-year questions, a
 ## Deploy with Supabase + Render/Railway
 
 1. Create a Supabase project and run [`supabase/schema.sql`](./supabase/schema.sql) in its SQL Editor.
-2. Enable Email auth in Supabase Authentication settings.
-3. Create the first account, then promote it to teacher using the SQL comment at the bottom of the schema file.
-4. Create a web service from this repository. Set the build command to `npm run build` and the start command to `npm start`; Docker deployment is also supported.
-5. Add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `PORT` as environment variables.
-6. Set the Supabase Auth Site URL and redirect URLs to your production domain.
-7. Add a custom domain and enable HTTPS at the host.
+2. If the project already existed, run [`supabase/resource-management-migration.sql`](./supabase/resource-management-migration.sql) once to enable editing, restore, duplicate detection, and file sizes.
+3. Enable Email auth in Supabase Authentication settings.
+4. Create the first account, then promote it to teacher using the SQL comment at the bottom of the schema file.
+5. Create a web service from this repository. Set the build command to `npm run build` and the start command to `npm start`; Docker deployment is also supported.
+6. Add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `PORT` as environment variables.
+7. Set the Supabase Auth Site URL and redirect URLs to your production domain.
+8. Add a custom domain and enable HTTPS at the host.
 
 The browser requires Supabase configuration and does not use local file storage. Supabase is the only source of truth for users, resources, and uploaded files.
 
