@@ -129,3 +129,14 @@ html[data-theme=dark] .progress-track{background:#443c58}
   .trash-row{align-items:flex-start;flex-direction:column}
   .trash-actions{width:100%;justify-content:flex-start}
 }
+/* Keep the student entry action intentionally secondary in light mode. */
+html:not([data-theme=dark]) .student-button,
+html:not([data-theme=dark]) .student-button:hover,
+html:not([data-theme=dark]) .student-button:focus-visible{
+  background:#fff!important;
+  border:1px solid #dcd5f2!important;
+  color:#6552c3!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html:not([data-theme=dark]) .student-button:hover{background:#f7f5ff!important;border-color:#b9aceb!important}
