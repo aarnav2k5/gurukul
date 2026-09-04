@@ -146,21 +146,21 @@ function App() {
     const mapRows = async (data) => Promise.all(
       (data || []).map(async (r) => {
         const url = publicMode
-          ? db.storage.from("resources").getPublicUrl(r.file_path).data
+          ? db.storage.from("resources").getPublicUrl(r.file_path, { download: r.file_name }).data
               .publicUrl
           : (
               await db.storage
                 .from("resources")
-                .createSignedUrl(r.file_path, 3600)
+                .createSignedUrl(r.file_path, 3600, { download: r.file_name })
             ).data?.signedUrl;
         const scheme = r.marking_scheme_path
           ? publicMode
-            ? db.storage.from("resources").getPublicUrl(r.marking_scheme_path)
+            ? db.storage.from("resources").getPublicUrl(r.marking_scheme_path, { download: r.marking_scheme_name || true })
                 .data.publicUrl
             : (
                 await db.storage
                   .from("resources")
-                  .createSignedUrl(r.marking_scheme_path, 3600)
+                  .createSignedUrl(r.marking_scheme_path, 3600, { download: r.marking_scheme_name || true })
               ).data?.signedUrl
           : null;
         return {
@@ -1004,8 +1004,7 @@ function Resource({ r, teacher, onDelete, onEdit }) {
       <div className="actions">
         <a
           href={r.fileUrl}
-          target="_blank"
-          rel="noreferrer"
+          download={r.fileName}
           className="download"
         >
           <Download size={15} /> Download
@@ -1013,8 +1012,7 @@ function Resource({ r, teacher, onDelete, onEdit }) {
         {r.schemeUrl && (
           <a
             href={r.schemeUrl}
-            target="_blank"
-            rel="noreferrer"
+            download={r.marking_scheme_name || true}
             className="scheme"
           >
             Marking scheme
