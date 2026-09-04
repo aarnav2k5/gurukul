@@ -41,3 +41,49 @@ html[data-theme=dark] .app-shell::before{background:radial-gradient(700px circle
   .download{flex:1;justify-content:center}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Mobile-first polish: keep navigation and search usable on narrow screens. */
+@media(max-width:680px){
+  body{overflow-x:hidden}
+  .sidebar{width:min(290px,88vw);left:-100%;box-shadow:18px 0 50px rgba(24,18,48,.18)}
+  .sidebar.open{left:0}
+  .topbar{height:68px;gap:9px;padding:0 14px}
+  .topbar>.search{width:auto;flex:1;min-width:0;padding:0 10px;background:#fff;border:1px solid #e5e3ed}
+  .topbar>.search input{display:block;min-width:0;padding:10px 0;font-size:12px}
+  html[data-theme=dark] .topbar>.search{background:#2a2638;border-color:#443c58}
+  .page{padding:30px 14px 55px}
+  .page-heading{align-items:flex-start;flex-direction:column;gap:18px}
+  .page-heading .primary{width:100%}
+  .guided,.results{padding:18px;border-radius:14px}
+  .filters{flex-wrap:wrap}
+  .filters .search,.filters select{width:100%}
+  .resource{align-items:flex-start;flex-wrap:wrap;padding:13px}
+  .resource-info{width:calc(100% - 56px)}
+  .resource-title{display:block}
+  .resource-title h3{white-space:normal;line-height:1.35}
+  .actions{width:100%;padding:0}
+  .download{flex:1;justify-content:center}
+  .scheme{padding:9px 4px}
+  .modal{padding:24px 18px}
+  .modal h2{font-size:24px}
+  .close{top:15px;right:15px}
+}
+@media(max-width:420px){
+  .topbar{gap:7px;padding-inline:10px}
+  .topbar>.search{padding:0 8px}
+  .topbar>.search input{font-size:11px}
+  .top-avatar{width:31px;height:31px}
+  .page{padding-inline:11px}
+  .page h1{font-size:30px}
+  .stat{min-width:0;padding:11px 9px}
+  .stat small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .stat b{font-size:19px}
+  .choice-grid,.category-grid{grid-template-columns:1fr}
+  .choice{min-height:76px}
+  .guided-top{display:block}
+  .step{display:inline-block;margin-top:13px}
+  .results-heading h2{font-size:22px}
+  .resource-info{width:calc(100% - 53px)}
+  .actions{gap:5px;flex-wrap:wrap}
+  .download{min-width:130px}
+  .scheme{flex:1;text-align:center}
+}
