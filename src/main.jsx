@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "./components/ui/button";
 import { Spotlight } from "./components/ui/spotlight";
 import {
@@ -73,6 +73,7 @@ function App() {
     [level, setLevel] = useState(""),
     [upload, setUpload] = useState(false),
     [settings, setSettings] = useState(false),
+    [mobileMenu, setMobileMenu] = useState(false),
     [toast, setToast] = useState("");
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -302,7 +303,12 @@ function App() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.25 }}
     >
-      <aside className="sidebar">
+      <div
+        className={cn("sidebar-backdrop", mobileMenu && "visible")}
+        onClick={() => setMobileMenu(false)}
+        aria-hidden="true"
+      />
+      <aside className={cn("sidebar", mobileMenu && "open")}>
         <Logo />
         <div className="account">
           <span className="avatar">
@@ -314,11 +320,14 @@ function App() {
           </span>
         </div>
         <p className="eyebrow">LIBRARY</p>
-        <Nav
-          icon={Library}
-          text="Browse library"
-          active={step < 4}
-          onClick={browse}
+          <Nav
+            icon={Library}
+            text="Browse library"
+            active={step < 4}
+            onClick={() => {
+              browse();
+              setMobileMenu(false);
+            }}
         />
         {!student && (
           <>
@@ -369,7 +378,12 @@ function App() {
       </aside>
       <main className="main">
         <header className="topbar">
-          <button className="mobile-menu">
+          <button
+            className="mobile-menu"
+            onClick={() => setMobileMenu((open) => !open)}
+            aria-label="Toggle navigation"
+            aria-expanded={mobileMenu}
+          >
             <Menu size={20} />
           </button>
           <label className="search">
@@ -468,16 +482,18 @@ function App() {
           )}
         </section>
       </main>
-      {upload && (
-        <UploadModal onClose={() => setUpload(false)} onSubmit={saveUpload} />
-      )}
-      {settings && (
-        <SettingsModal
-          user={user}
-          onClose={() => setSettings(false)}
-          onSignOut={signOut}
-        />
-      )}
+      <AnimatePresence>
+        {upload && (
+          <UploadModal onClose={() => setUpload(false)} onSubmit={saveUpload} />
+        )}
+        {settings && (
+          <SettingsModal
+            user={user}
+            onClose={() => setSettings(false)}
+            onSignOut={signOut}
+          />
+        )}
+      </AnimatePresence>
       <div className={cn("toast", toast && "show")}>{toast}</div>
     </motion.div>
   );
@@ -670,8 +686,15 @@ function Results({
         <div className="empty">Loading resources…</div>
       ) : resources.length ? (
         <div className="resource-list">
-          {resources.map((r) => (
-            <Resource key={r.id} r={r} teacher={teacher} onDelete={onDelete} />
+          {resources.map((r, index) => (
+            <motion.div
+              key={r.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: Math.min(index * 0.035, 0.3) }}
+            >
+              <Resource r={r} teacher={teacher} onDelete={onDelete} />
+            </motion.div>
           ))}
         </div>
       ) : (
@@ -742,8 +765,20 @@ function UploadModal({ onClose, onSubmit }) {
   const [classLevel, setClassLevel] = useState("Class 6");
   const subjectOptions = subjectsFor(classLevel);
   return (
-    <div className="overlay">
-      <div className="modal">
+    <motion.div
+      className="overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        className="modal"
+        initial={{ opacity: 0, y: 18, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 330, damping: 28 }}
+      >
         <button className="close" onClick={onClose}>
           <X size={19} />
         </button>
@@ -821,14 +856,26 @@ function UploadModal({ onClose, onSubmit }) {
             <Upload size={15} /> Save resource
           </button>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 function SettingsModal({ user, onClose, onSignOut }) {
   return (
-    <div className="overlay">
-      <div className="modal small">
+    <motion.div
+      className="overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        className="modal small"
+        initial={{ opacity: 0, y: 18, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 330, damping: 28 }}
+      >
         <button className="close" onClick={onClose}>
           <X size={19} />
         </button>
@@ -851,8 +898,8 @@ function SettingsModal({ user, onClose, onSignOut }) {
         <button className="secondary full" onClick={onSignOut}>
           <LogOut size={15} /> Sign out
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 export default App;

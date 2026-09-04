@@ -15,3 +15,29 @@ html[data-theme=dark] input[type=file]::file-selector-button{margin-right:10px;b
 .spotlight-glow{position:absolute;inset:0;pointer-events:none;opacity:.7;background:radial-gradient(420px circle at var(--spotlight-x,50%) var(--spotlight-y,0%),rgba(139,92,246,.16),transparent 58%);transition:opacity .25s ease}
 .spotlight>*:not(.spotlight-glow){position:relative;z-index:1}
 html[data-theme=dark] .spotlight-glow{opacity:1;background:radial-gradient(420px circle at var(--spotlight-x,50%) var(--spotlight-y,0%),rgba(124,92,246,.2),transparent 62%)}
+.app-shell{position:relative;isolation:isolate;overflow:hidden}
+.app-shell::before{content:"";position:fixed;z-index:-1;inset:0;pointer-events:none;background:radial-gradient(700px circle at 90% 0%,rgba(124,92,246,.09),transparent 55%),radial-gradient(520px circle at 30% 100%,rgba(91,161,220,.06),transparent 60%)}
+.topbar{backdrop-filter:blur(18px);position:sticky;top:0;z-index:10}
+.page-heading h1{max-width:680px;line-height:1.05}
+.choice,.resource,.stat,.guided,.results{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.choice:focus-visible,.nav:focus-visible,.download:focus-visible,.theme:focus-visible,.mobile-menu:focus-visible,.top-avatar:focus-visible{outline:3px solid rgba(124,92,246,.35);outline-offset:2px}
+.resource:hover{transform:translateY(-1px)}
+.sidebar-backdrop{display:none}
+html[data-theme=dark] .app-shell::before{background:radial-gradient(700px circle at 90% 0%,rgba(124,92,246,.14),transparent 55%),radial-gradient(520px circle at 30% 100%,rgba(46,137,196,.08),transparent 60%)}
+@media(max-width:680px){
+  .sidebar{box-shadow:18px 0 50px rgba(24,18,48,.16)}
+  .sidebar-backdrop.visible{display:block;position:fixed;z-index:19;inset:0;background:rgba(16,12,28,.42);backdrop-filter:blur(2px)}
+  .topbar{height:68px}
+  .page-heading{margin-bottom:24px}
+  .page h1{font-size:34px}
+  .stats{gap:9px}
+  .stat{padding:13px 11px;gap:8px}
+  .stat b{font-size:20px}
+  .stat small{font-size:10px}
+  .guided-top{margin-bottom:18px}
+  .choice{min-height:102px}
+  .resource{padding:13px}
+  .actions{padding-left:0}
+  .download{flex:1;justify-content:center}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
