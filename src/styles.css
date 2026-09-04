@@ -98,11 +98,25 @@ html[data-theme=dark] .app-shell::before{background:radial-gradient(700px circle
 .trash-row b,.trash-row small{display:block}
 .trash-row b{overflow:hidden;color:#39334b;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
 .trash-row small{margin-top:4px;color:#9690a4;font-size:10px}
+.trash-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.permanent-delete{border:1px solid #f1c8cf;border-radius:7px;padding:7px 9px;background:#fff5f6;color:#b74e5e;font-size:11px;font-weight:750;white-space:nowrap}
+.upload-progress{margin:17px 0;padding:12px;border:1px solid #e4def8;border-radius:10px;background:#faf9ff;color:#5c4db2}
+.upload-progress.failed{border-color:#f0c8cf;background:#fff7f8;color:#b74e5e}
+.upload-progress.complete{border-color:#bce5d5;background:#f5fffa;color:#328163}
+.upload-progress-top{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:750}
+.progress-track{height:7px;margin:9px 0 7px;overflow:hidden;border-radius:99px;background:#e8e3f6}
+.progress-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#7665d5,#9a82ef);transition:width .15s ease}
+.upload-progress small{display:block;overflow:hidden;color:#918aa4;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
 .empty.compact{min-height:130px}
 .mobile-bottom-nav{display:none}
 html[data-theme=dark] .breadcrumbs b,html[data-theme=dark] .trash-row b{color:#ebe6f7}
 html[data-theme=dark] .restore,.dark .restore{border-color:#554b6f;background:#2a2638;color:#d0c8ff}
 html[data-theme=dark] .trash-row{border-color:#3b354c}
+html[data-theme=dark] .permanent-delete{border-color:#6d3e4b;background:#3b202b;color:#ffb5c0}
+html[data-theme=dark] .upload-progress{border-color:#554b6f;background:#2a2638;color:#d0c8ff}
+html[data-theme=dark] .upload-progress.failed{border-color:#6d3e4b;background:#3b202b;color:#ffb5c0}
+html[data-theme=dark] .upload-progress.complete{border-color:#326c59;background:#203c34;color:#a8e6c9}
+html[data-theme=dark] .progress-track{background:#443c58}
 @media(max-width:680px){
   .breadcrumbs{margin-bottom:8px}
   .mobile-bottom-nav{position:fixed;z-index:15;right:10px;bottom:10px;left:10px;display:flex;justify-content:space-around;gap:6px;padding:8px;border:1px solid #e4e0ef;border-radius:14px;background:rgba(255,255,255,.9);box-shadow:0 12px 35px rgba(42,31,74,.14);backdrop-filter:blur(18px)}
@@ -112,4 +126,6 @@ html[data-theme=dark] .trash-row{border-color:#3b354c}
   html[data-theme=dark] .mobile-bottom-nav button{color:#aaa5ba}
   html[data-theme=dark] .mobile-bottom-nav button:first-child{background:#302a4d;color:#d0c8ff}
   .page{padding-bottom:90px}
+  .trash-row{align-items:flex-start;flex-direction:column}
+  .trash-actions{width:100%;justify-content:flex-start}
 }

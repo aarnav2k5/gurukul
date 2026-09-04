@@ -44,19 +44,6 @@ const TYPES = {
   papers: "Sample Papers",
 };
 const ICONS = { notes: FileText, pyqs: ClipboardList, papers: BookOpen };
-const readFile = (file) =>
-  new Promise((resolve, reject) => {
-    if (!file) return resolve(null);
-    const reader = new FileReader();
-    reader.onload = () =>
-      resolve({
-        name: file.name,
-        type: file.type,
-        data: reader.result.split(",")[1],
-      });
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 const safeName = (name) => name.replace(/[^a-zA-Z0-9._-]/g, "-");
 const formatBytes = (bytes) => {
   if (!bytes) return "Size unavailable";
@@ -68,6 +55,7 @@ const cn = (...xs) => xs.filter(Boolean).join(" ");
 
 function App() {
   const [client, setClient] = useState(null),
+    [supabaseConfig, setSupabaseConfig] = useState(null),
     [user, setUser] = useState(null),
     [teacher, setTeacher] = useState(false),
     [student, setStudent] = useState(false),
@@ -90,6 +78,7 @@ function App() {
     [chapter, setChapter] = useState(""),
     [year, setYear] = useState(""),
     [upload, setUpload] = useState(false),
+    [uploadProgress, setUploadProgress] = useState(null),
     [editing, setEditing] = useState(null),
     [showTrash, setShowTrash] = useState(false),
     [settings, setSettings] = useState(false),
@@ -114,6 +103,7 @@ function App() {
           },
         });
         if (!live) return;
+        setSupabaseConfig(cfg);
         setClient(db);
         const session = await db.auth.getSession();
         if (session.data.session) {
@@ -194,6 +184,33 @@ function App() {
   function notify(message) {
     setToast(message);
     setTimeout(() => setToast(""), 2800);
+  }
+  async function uploadWithProgress(path, file, onProgress) {
+    const session = (await client.auth.getSession()).data.session;
+    if (!session?.access_token || !supabaseConfig?.supabaseUrl) {
+      throw Error("Your session expired. Please sign in again.");
+    }
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${supabaseConfig.supabaseUrl}/storage/v1/object/resources/${path.split("/").map(encodeURIComponent).join("/")}`);
+      xhr.setRequestHeader("Authorization", `Bearer ${session.access_token}`);
+      xhr.setRequestHeader("apikey", supabaseConfig.supabaseAnonKey);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.setRequestHeader("x-upsert", "false");
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
+      };
+      xhr.onerror = () => reject(Error("Network error while uploading the file."));
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else {
+          let message = "Could not upload the file.";
+          try { message = JSON.parse(xhr.responseText).message || message; } catch {}
+          reject(Error(message));
+        }
+      };
+      xhr.send(file);
+    });
   }
   async function signIn(e) {
     e.preventDefault();
@@ -276,16 +293,28 @@ function App() {
     await load(client, false);
     notify("Resource restored");
   }
+  async function permanentlyDelete(r) {
+    if (!confirm(`Permanently delete “${r.title}”? This cannot be undone.`)) return;
+    const storage = await client.storage
+      .from("resources")
+      .remove([r.file_path, r.marking_scheme_path].filter(Boolean));
+    if (storage.error) return notify(storage.error.message);
+    const result = await client.from("resources").delete().eq("id", r.id);
+    if (result.error) return notify(result.error.message);
+    setDeletedResources((rs) => rs.filter((x) => x.id !== r.id));
+    notify("Resource permanently deleted");
+  }
   async function saveUpload(e) {
     e.preventDefault();
     const f = new FormData(e.currentTarget),
-      file = await readFile(f.get("file")),
-      scheme = await readFile(f.get("scheme"));
+      file = f.get("file")?.size ? f.get("file") : null,
+      scheme = f.get("scheme")?.size ? f.get("scheme") : null;
     if (!file) return notify("Choose a file first");
     const id = crypto.randomUUID(),
       base = `${user.id}/${id}`,
       path = `${base}-${safeName(file.name)}`,
       schemePath = scheme ? `${base}-scheme-${safeName(scheme.name)}` : null;
+    const uploadedPaths = [];
     try {
       const duplicate = await client
         .from("resources")
@@ -299,19 +328,13 @@ function App() {
       if (duplicate.data?.length) {
         return notify(`This file is already uploaded as “${duplicate.data[0].title}”`);
       }
-      let result = await client.storage.from("resources").upload(
-        path,
-        Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0)),
-        { contentType: file.type || "application/octet-stream" },
-      );
-      if (result.error) throw result.error;
+      setUploadProgress({ percent: 0, status: "Uploading resource…", fileName: file.name, fileSize: file.size, active: true });
+      await uploadWithProgress(path, file, (percent) => setUploadProgress((p) => ({ ...p, percent: scheme ? Math.round(percent * 0.75) : percent })));
+      uploadedPaths.push(path);
       if (scheme) {
-        result = await client.storage.from("resources").upload(
-          schemePath,
-          Uint8Array.from(atob(scheme.data), (c) => c.charCodeAt(0)),
-          { contentType: scheme.type || "application/octet-stream" },
-        );
-        if (result.error) throw result.error;
+        setUploadProgress((p) => ({ ...p, status: "Uploading marking scheme…" }));
+        await uploadWithProgress(schemePath, scheme, (percent) => setUploadProgress((p) => ({ ...p, percent: 75 + Math.round(percent * 0.25) })));
+        uploadedPaths.push(schemePath);
       }
       const insert = await client.from("resources").insert({
         owner_id: user.id,
@@ -323,17 +346,20 @@ function App() {
         year: f.get("year") ? Number(f.get("year")) : null,
         marks: f.get("marks") ? Number(f.get("marks")) : null,
         file_name: file.name,
-        file_size: f.get("file").size,
+        file_size: file.size,
         file_path: path,
         marking_scheme_name: scheme?.name || null,
         marking_scheme_path: schemePath,
-        marking_scheme_size: f.get("scheme")?.size || null,
+        marking_scheme_size: scheme?.size || null,
       });
       if (insert.error) throw insert.error;
-      setUpload(false);
+      setUploadProgress({ percent: 100, status: "Upload complete", fileName: file.name, fileSize: file.size, done: true });
       await load(client, false);
       notify("Resource saved");
+      setTimeout(() => { setUpload(false); setUploadProgress(null); }, 650);
     } catch (err) {
+      if (uploadedPaths.length) await client.storage.from("resources").remove(uploadedPaths);
+      setUploadProgress((p) => ({ ...(p || {}), status: "Upload failed", error: true, active: false }));
       notify(err.message || "Could not save resource");
     }
   }
@@ -342,8 +368,8 @@ function App() {
     const f = new FormData(e.currentTarget);
     const replacementFile = f.get("file");
     const replacementSchemeFile = f.get("scheme");
-    const replacement = await readFile(replacementFile?.size ? replacementFile : null);
-    const replacementScheme = await readFile(replacementSchemeFile?.size ? replacementSchemeFile : null);
+    const replacement = replacementFile?.size ? replacementFile : null;
+    const replacementScheme = replacementSchemeFile?.size ? replacementSchemeFile : null;
     const old = editing;
     const keepScheme = f.get("category") === "papers";
     let nextPath = old.file_path;
@@ -352,22 +378,14 @@ function App() {
     try {
       if (replacement) {
         nextPath = `${user.id}/${old.id}-${crypto.randomUUID()}-${safeName(replacement.name)}`;
-        const result = await client.storage.from("resources").upload(
-          nextPath,
-          Uint8Array.from(atob(replacement.data), (c) => c.charCodeAt(0)),
-          { contentType: replacement.type || "application/octet-stream" },
-        );
-        if (result.error) throw result.error;
+        setUploadProgress({ percent: 0, status: "Replacing resource file…", fileName: replacement.name, fileSize: replacement.size, active: true });
+        await uploadWithProgress(nextPath, replacement, (percent) => setUploadProgress((p) => ({ ...p, percent })));
         uploaded.push(nextPath);
       }
       if (replacementScheme) {
         nextSchemePath = `${user.id}/${old.id}-scheme-${crypto.randomUUID()}-${safeName(replacementScheme.name)}`;
-        const result = await client.storage.from("resources").upload(
-          nextSchemePath,
-          Uint8Array.from(atob(replacementScheme.data), (c) => c.charCodeAt(0)),
-          { contentType: replacementScheme.type || "application/octet-stream" },
-        );
-        if (result.error) throw result.error;
+        setUploadProgress((p) => ({ ...(p || {}), status: "Replacing marking scheme…" }));
+        await uploadWithProgress(nextSchemePath, replacementScheme, (percent) => setUploadProgress((p) => ({ ...p, percent })));
         uploaded.push(nextSchemePath);
       }
       const result = await client.from("resources").update({
@@ -390,6 +408,7 @@ function App() {
       const oldPaths = [replacement && old.file_path, (replacementScheme || !keepScheme) && old.marking_scheme_path].filter(Boolean);
       if (oldPaths.length) await client.storage.from("resources").remove(oldPaths);
       setEditing(null);
+      setUploadProgress(null);
       await load(client, false);
       notify("Resource updated");
     } catch (err) {
@@ -615,7 +634,11 @@ function App() {
       </main>
       <AnimatePresence>
         {upload && (
-          <UploadModal onClose={() => setUpload(false)} onSubmit={saveUpload} />
+          <UploadModal
+            onClose={() => { if (!uploadProgress?.active) { setUpload(false); setUploadProgress(null); } }}
+            onSubmit={saveUpload}
+            progress={uploadProgress}
+          />
         )}
       {settings && (
           <SettingsModal
@@ -628,7 +651,7 @@ function App() {
       {editing && (
         <EditResourceModal
           resource={editing}
-          onClose={() => setEditing(null)}
+          onClose={() => { if (!uploadProgress?.active) { setEditing(null); setUploadProgress(null); } }}
           onSubmit={saveEdit}
         />
       )}
@@ -637,6 +660,7 @@ function App() {
           resources={deletedResources}
           onClose={() => setShowTrash(false)}
           onRestore={restore}
+          onPermanentDelete={permanentlyDelete}
         />
       )}
       <nav className="mobile-bottom-nav" aria-label="Quick navigation">
@@ -955,7 +979,7 @@ function Resource({ r, teacher, onDelete, onEdit }) {
     </article>
   );
 }
-function UploadModal({ onClose, onSubmit }) {
+function UploadModal({ onClose, onSubmit, progress }) {
   const [category, setCategory] = useState("notes");
   const [classLevel, setClassLevel] = useState("Class 6");
   const subjectOptions = subjectsFor(classLevel);
@@ -1055,7 +1079,14 @@ function UploadModal({ onClose, onSubmit }) {
               <input name="scheme" type="file" />
             </label>
           )}
-          <button className="primary full">
+          {progress && (
+            <div className={cn("upload-progress", progress.error && "failed", progress.done && "complete")}>
+              <div className="upload-progress-top"><span>{progress.status}</span><b>{progress.percent}%</b></div>
+              <div className="progress-track"><span style={{ width: `${progress.percent}%` }} /></div>
+              <small>{progress.fileName} · {formatBytes(progress.fileSize)}</small>
+            </div>
+          )}
+          <button className="primary full" disabled={Boolean(progress?.active)}>
             <Upload size={15} /> Save resource
           </button>
         </form>
@@ -1063,7 +1094,7 @@ function UploadModal({ onClose, onSubmit }) {
     </motion.div>
   );
 }
-function EditResourceModal({ resource, onClose, onSubmit }) {
+function EditResourceModal({ resource, onClose, onSubmit, progress }) {
   const [classLevel, setClassLevel] = useState(resource.classLevel);
   const [category, setCategory] = useState(resource.category);
   const subjectOptions = subjectsFor(classLevel);
@@ -1091,13 +1122,20 @@ function EditResourceModal({ resource, onClose, onSubmit }) {
             <label>Marks<input name="marks" type="number" defaultValue={resource.marks || ""} /></label>
           </div>
           {category === "papers" && <label>Replace marking scheme<input name="scheme" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" /></label>}
-          <Button className="primary full">Save changes</Button>
+          {progress && (
+            <div className={cn("upload-progress", progress.error && "failed", progress.done && "complete")}>
+              <div className="upload-progress-top"><span>{progress.status}</span><b>{progress.percent}%</b></div>
+              <div className="progress-track"><span style={{ width: `${progress.percent}%` }} /></div>
+              <small>{progress.fileName} · {formatBytes(progress.fileSize)}</small>
+            </div>
+          )}
+          <Button className="primary full" disabled={Boolean(progress?.active)}>Save changes</Button>
         </form>
       </motion.div>
     </motion.div>
   );
 }
-function TrashModal({ resources, onClose, onRestore }) {
+function TrashModal({ resources, onClose, onRestore, onPermanentDelete }) {
   return (
     <motion.div className="overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div className="modal small" initial={{ opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }}>
@@ -1105,7 +1143,7 @@ function TrashModal({ resources, onClose, onRestore }) {
         <p className="eyebrow">TEACHER TOOLS</p>
         <h2>Recently deleted</h2>
         <p className="subhead">Restore resources without re-uploading their files.</p>
-        {resources.length ? <div className="trash-list">{resources.map((r) => <div className="trash-row" key={r.id}><span><b>{r.title}</b><small>{r.classLevel} · {r.subject}</small></span><button className="restore" onClick={() => onRestore(r)}>Restore</button></div>)}</div> : <div className="empty compact"><Trash2 size={24} /><b>Nothing deleted</b><span>Deleted resources will appear here.</span></div>}
+        {resources.length ? <div className="trash-list">{resources.map((r) => <div className="trash-row" key={r.id}><span><b>{r.title}</b><small>{r.classLevel} · {r.subject}</small></span><div className="trash-actions"><button className="restore" onClick={() => onRestore(r)}>Restore</button><button className="permanent-delete" onClick={() => onPermanentDelete(r)}>Delete permanently</button></div></div>)}</div> : <div className="empty compact"><Trash2 size={24} /><b>Nothing deleted</b><span>Deleted resources will appear here.</span></div>}
       </motion.div>
     </motion.div>
   );
