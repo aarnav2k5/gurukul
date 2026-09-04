@@ -11,6 +11,7 @@ import { GuidedBrowser, LibraryResults } from "./components/resources/LibraryBro
 import { UploadResourceModal } from "./components/teacher/UploadResourceModal";
 import { EditResourceModal, SettingsModal, TrashModal } from "./components/teacher/TeacherModals";
 import { resourceFileSchema } from "./lib/validations/resource";
+import { APP_VERSION } from "./lib/app-config";
 import { useLiveAudience } from "./hooks/useLiveAudience";
 import {
   BookOpen,
@@ -683,6 +684,7 @@ function App() {
             />
           )}
         </section>
+        <footer className="site-footer">Tuition LMS <span>·</span> Build v{APP_VERSION}</footer>
       </main>
       <AnimatePresence>
         {upload && (
