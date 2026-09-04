@@ -26,8 +26,17 @@ import {
 
 const CLASSES = Array.from({ length: 7 }, (_, i) => `Class ${i + 6}`);
 const SUBJECTS = ["Mathematics", "Science", "English", "Social Science"];
-const SENIOR_SUBJECTS = ["Mathematics", "Science", "English", "History", "Political Science", "Geography", "Economics"];
-const subjectsFor = (classLevel) => ["Class 11", "Class 12"].includes(classLevel) ? SENIOR_SUBJECTS : SUBJECTS;
+const SENIOR_SUBJECTS = [
+  "Mathematics",
+  "Science",
+  "English",
+  "History",
+  "Political Science",
+  "Geography",
+  "Economics",
+];
+const subjectsFor = (classLevel) =>
+  ["Class 11", "Class 12"].includes(classLevel) ? SENIOR_SUBJECTS : SUBJECTS;
 const TYPES = {
   notes: "Chapter Notes",
   pyqs: "Previous Year Questions",
@@ -58,11 +67,10 @@ function App() {
     [resources, setResources] = useState([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
-  const [theme, setTheme] = useState(
-      () =>
-        typeof window !== "undefined"
-          ? window.localStorage.getItem("gurukul-theme") || "light"
-          : "light",
+  const [theme, setTheme] = useState(() =>
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("gurukul-theme") || "light"
+        : "light",
     ),
     [step, setStep] = useState(1),
     [pickedClass, setPickedClass] = useState(""),
@@ -255,22 +263,20 @@ function App() {
         );
         if (result.error) throw result.error;
       }
-      const insert = await client
-        .from("resources")
-        .insert({
-          owner_id: user.id,
-          title: f.get("title"),
-          category: f.get("category"),
-          class_level: f.get("classLevel"),
-          subject: f.get("subject"),
-          chapter: f.get("chapter"),
-          year: f.get("year") ? Number(f.get("year")) : null,
-          marks: f.get("marks") ? Number(f.get("marks")) : null,
-          file_name: file.name,
-          file_path: path,
-          marking_scheme_name: scheme?.name || null,
-          marking_scheme_path: schemePath,
-        });
+      const insert = await client.from("resources").insert({
+        owner_id: user.id,
+        title: f.get("title"),
+        category: f.get("category"),
+        class_level: f.get("classLevel"),
+        subject: f.get("subject"),
+        chapter: f.get("chapter"),
+        year: f.get("year") ? Number(f.get("year")) : null,
+        marks: f.get("marks") ? Number(f.get("marks")) : null,
+        file_name: file.name,
+        file_path: path,
+        marking_scheme_name: scheme?.name || null,
+        marking_scheme_path: schemePath,
+      });
       if (insert.error) throw insert.error;
       setUpload(false);
       await load(client, false);
@@ -320,14 +326,14 @@ function App() {
           </span>
         </div>
         <p className="eyebrow">LIBRARY</p>
-          <Nav
-            icon={Library}
-            text="Browse library"
-            active={step < 4}
-            onClick={() => {
-              browse();
-              setMobileMenu(false);
-            }}
+        <Nav
+          icon={Library}
+          text="Browse library"
+          active={step < 4}
+          onClick={() => {
+            browse();
+            setMobileMenu(false);
+          }}
         />
         {!student && (
           <>
@@ -553,7 +559,11 @@ function Auth({ error, onSubmit, onStudent, theme, setTheme }) {
           {error && <p className="error">{error}</p>}
           <Button className="primary full">Sign in</Button>
         </form>
-        <Button variant="secondary" className="student-button" onClick={onStudent}>
+        <Button
+          variant="secondary"
+          className="student-button"
+          onClick={onStudent}
+        >
           <GraduationCap size={16} /> I’m a student — enter library
         </Button>
       </motion.div>
@@ -580,7 +590,16 @@ function Guided({
     step === 1
       ? CLASSES.map((x) => [x, "Notes & practice", GraduationCap, onClass])
       : step === 2
-        ? subjectsFor(selectedClass).map((x) => [x, ["History", "Political Science", "Geography", "Economics"].includes(x) ? "Senior social science" : "Concepts & questions", BookOpen, onSubject])
+        ? subjectsFor(selectedClass).map((x) => [
+            x,
+            ["History", "Political Science", "Geography", "Economics"].includes(
+              x,
+            )
+              ? "Concepts & Questions"
+              : "Concepts & Questions",
+            BookOpen,
+            onSubject,
+          ])
         : Object.entries(TYPES).map(([key, x]) => [
             x,
             key === "notes"
@@ -691,7 +710,10 @@ function Results({
               key={r.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: Math.min(index * 0.035, 0.3) }}
+              transition={{
+                duration: 0.25,
+                delay: Math.min(index * 0.035, 0.3),
+              }}
             >
               <Resource r={r} teacher={teacher} onDelete={onDelete} />
             </motion.div>
@@ -799,7 +821,11 @@ function UploadModal({ onClose, onSubmit }) {
           <div className="form-grid">
             <label>
               Class
-              <select name="classLevel" value={classLevel} onChange={(e) => setClassLevel(e.target.value)}>
+              <select
+                name="classLevel"
+                value={classLevel}
+                onChange={(e) => setClassLevel(e.target.value)}
+              >
                 {CLASSES.map((x) => (
                   <option key={x}>{x}</option>
                 ))}
@@ -807,7 +833,11 @@ function UploadModal({ onClose, onSubmit }) {
             </label>
             <label>
               Subject
-              <select name="subject" defaultValue="Mathematics" key={classLevel}>
+              <select
+                name="subject"
+                defaultValue="Mathematics"
+                key={classLevel}
+              >
                 {subjectOptions.map((x) => (
                   <option key={x}>{x}</option>
                 ))}
