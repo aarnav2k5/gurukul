@@ -9,6 +9,8 @@ import {
   BookOpen,
   ClipboardList,
   Download,
+  Eye,
+  EyeOff,
   FileText,
   GraduationCap,
   Library,
@@ -62,7 +64,9 @@ function App() {
     [resources, setResources] = useState([]),
     [deletedResources, setDeletedResources] = useState([]),
     [loading, setLoading] = useState(true),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [authLoading, setAuthLoading] = useState(false),
+    [authFeedback, setAuthFeedback] = useState(null);
   const [theme, setTheme] = useState(() =>
       typeof window !== "undefined"
         ? window.localStorage.getItem("gurukul-theme") || "light"
@@ -215,12 +219,26 @@ function App() {
   async function signIn(e) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const email = String(form.get("email") || "").trim();
+    const password = String(form.get("password") || "");
+    setError("");
+    setAuthFeedback(null);
+    if (!email) return setError("Enter your teacher email.");
+    if (!email.includes("@")) return setError("Enter a valid email address.");
+    if (!password) return setError("Enter your password.");
+    setAuthLoading(true);
     const result = await client.auth.signInWithPassword({
-      email: form.get("email"),
-      password: form.get("password"),
+      email,
+      password,
     });
-    if (result.error) setError(result.error.message);
-    else location.reload();
+    if (result.error) {
+      setAuthLoading(false);
+      setError("Unable to sign in. Check your email and password and try again.");
+      setAuthFeedback({ type: "error", message: "Sign-in failed. Your account details were not accepted." });
+    } else {
+      setAuthFeedback({ type: "success", message: "Signed in successfully. Opening your teacher library…" });
+      setTimeout(() => location.reload(), 650);
+    }
   }
   async function enterStudent() {
     setStudent(true);
@@ -426,6 +444,9 @@ function App() {
     return (
       <Auth
         error={error}
+        feedback={authFeedback}
+        loading={authLoading}
+        onFieldChange={() => { setError(""); setAuthFeedback(null); }}
         onSubmit={signIn}
         onStudent={enterStudent}
         theme={theme}
@@ -690,7 +711,9 @@ function Nav({ icon: Icon, text, onClick, active }) {
     </button>
   );
 }
-function Auth({ error, onSubmit, onStudent, theme, setTheme }) {
+function Auth({ error, feedback, loading, onFieldChange, onSubmit, onStudent, theme, setTheme }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   return (
     <Spotlight className="auth-screen">
       <motion.div
@@ -718,14 +741,44 @@ function Auth({ error, onSubmit, onStudent, theme, setTheme }) {
         <form onSubmit={onSubmit}>
           <label>
             Email
-            <input name="email" type="email" required />
+            <input
+              name="email"
+              type="email"
+              autoComplete="username"
+              required
+              onChange={onFieldChange}
+            />
           </label>
           <label>
             Password
-            <input name="password" type="password" required />
+            <span className="password-field">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                onChange={onFieldChange}
+                onKeyDown={(event) => setCapsLock(event.getModifierState?.("CapsLock") || false)}
+                onKeyUp={(event) => setCapsLock(event.getModifierState?.("CapsLock") || false)}
+                onBlur={() => setCapsLock(false)}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </span>
+            {capsLock && <small className="caps-warning">Caps Lock is on</small>}
           </label>
           {error && <p className="error">{error}</p>}
-          <Button className="primary full">Sign in</Button>
+          {feedback && <p className={cn("auth-feedback", feedback.type)} role={feedback.type === "error" ? "alert" : "status"}>{feedback.message}</p>}
+          <Button className="primary full" disabled={loading} aria-busy={loading}>
+            {loading && <span className="spinner" aria-hidden="true" />}
+            {loading ? "Signing in…" : "Sign in"}
+          </Button>
         </form>
         <Button
           variant="secondary"

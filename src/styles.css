@@ -140,3 +140,22 @@ html:not([data-theme=dark]) .student-button:focus-visible{
   transform:none!important;
 }
 html:not([data-theme=dark]) .student-button:hover{background:#f7f5ff!important;border-color:#b9aceb!important}
+.auth-screen{position:relative;isolation:isolate;overflow:hidden}
+.auth-screen::before,.auth-screen::after{content:"";position:absolute;z-index:0;width:34vw;height:34vw;min-width:220px;min-height:220px;border-radius:50%;filter:blur(10px);pointer-events:none;opacity:.55;animation:auth-float 12s ease-in-out infinite alternate}
+.auth-screen::before{top:-12vw;left:-8vw;background:radial-gradient(circle,rgba(139,92,246,.2),transparent 68%)}
+.auth-screen::after{right:-10vw;bottom:-14vw;background:radial-gradient(circle,rgba(56,150,200,.16),transparent 68%);animation-delay:-5s}
+.password-field{position:relative;display:block}
+.password-field input{padding-right:44px!important}
+.password-toggle{position:absolute;top:50%;right:8px;display:grid;place-items:center;width:30px;height:30px;transform:translateY(-50%);border:0;border-radius:7px;background:transparent;color:#918aa4}
+.password-toggle:hover{background:#f0edff;color:#6552c3}
+.caps-warning{display:block;margin-top:6px;color:#b66c42;font-size:11px;font-weight:650}
+.auth-feedback{margin:10px 0 12px;padding:9px 10px;border-radius:8px;font-size:11px;line-height:1.4}
+.auth-feedback.error{color:#b74e5e;background:#fff0f2}
+.auth-feedback.success{color:#328163;background:#edfff6}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+html[data-theme=dark] .password-toggle:hover{background:#302a4d;color:#d0c8ff}
+html[data-theme=dark] .auth-feedback.error{color:#ffb5c0;background:#3b202b}
+html[data-theme=dark] .auth-feedback.success{color:#a8e6c9;background:#203c34}
+@keyframes auth-float{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(20px,14px,0) scale(1.08)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.auth-screen::before,.auth-screen::after,.spinner{animation:none}}
