@@ -1,6 +1,10 @@
+"use client";
+
 import React, { useEffect, useMemo, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { createClient } from "@supabase/supabase-js";
+import { motion } from "framer-motion";
+import { Button } from "./components/ui/button";
+import { Spotlight } from "./components/ui/spotlight";
 import {
   BookOpen,
   ClipboardList,
@@ -19,7 +23,6 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import "./styles.css";
 
 const CLASSES = Array.from({ length: 7 }, (_, i) => `Class ${i + 6}`);
 const SUBJECTS = ["Mathematics", "Science", "English", "Social Science"];
@@ -56,7 +59,10 @@ function App() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
   const [theme, setTheme] = useState(
-      () => localStorage.getItem("gurukul-theme") || "light",
+      () =>
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("gurukul-theme") || "light"
+          : "light",
     ),
     [step, setStep] = useState(1),
     [pickedClass, setPickedClass] = useState(""),
@@ -290,7 +296,12 @@ function App() {
     );
   const categoryName = pickedType ? TYPES[pickedType] : "All resources";
   return (
-    <div className="app-shell">
+    <motion.div
+      className="app-shell"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
+    >
       <aside className="sidebar">
         <Logo />
         <div className="account">
@@ -468,7 +479,7 @@ function App() {
         />
       )}
       <div className={cn("toast", toast && "show")}>{toast}</div>
-    </div>
+    </motion.div>
   );
 }
 function Logo() {
@@ -491,8 +502,13 @@ function Nav({ icon: Icon, text, onClick, active }) {
 }
 function Auth({ error, onSubmit, onStudent, theme, setTheme }) {
   return (
-    <div className="auth-screen">
-      <div className="auth-card">
+    <Spotlight className="auth-screen">
+      <motion.div
+        className="auth-card"
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <Logo />
         <div className="auth-top">
           <p className="eyebrow">PRIVATE LEARNING LIBRARY</p>
@@ -519,13 +535,13 @@ function Auth({ error, onSubmit, onStudent, theme, setTheme }) {
             <input name="password" type="password" required />
           </label>
           {error && <p className="error">{error}</p>}
-          <button className="primary full">Sign in</button>
+          <Button className="primary full">Sign in</Button>
         </form>
-        <button className="student-button" onClick={onStudent}>
+        <Button variant="secondary" className="student-button" onClick={onStudent}>
           <GraduationCap size={16} /> I’m a student — enter library
-        </button>
-      </div>
-    </div>
+        </Button>
+      </motion.div>
+    </Spotlight>
   );
 }
 function Guided({
@@ -582,12 +598,20 @@ function Guided({
         </button>
       )}
       <div className={cn("choice-grid", step === 3 && "category-grid")}>
-        {items.map(([label, hint, Icon, action]) => (
-          <button className="choice" onClick={() => action(label)} key={label}>
+        {items.map(([label, hint, Icon, action], index) => (
+          <motion.button
+            className="choice"
+            onClick={() => action(label)}
+            key={label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.035 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <Icon size={20} />
             <b>{label}</b>
             <small>{hint}</small>
-          </button>
+          </motion.button>
         ))}
       </div>
     </div>
@@ -831,4 +855,4 @@ function SettingsModal({ user, onClose, onSignOut }) {
     </div>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+export default App;

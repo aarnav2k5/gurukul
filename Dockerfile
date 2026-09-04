@@ -3,5 +3,5 @@ WORKDIR /app
 COPY . .
 RUN npm ci && npm run build
 ENV NODE_ENV=production
-EXPOSE 4173
+EXPOSE 3000
 CMD ["npm","start"]

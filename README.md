@@ -34,6 +34,8 @@ Open http://localhost:5173. To test the production server locally, run `npm run 
 
 For the guided provider setup, run `bash scripts/deploy-wizard.sh`. It pauses at every dashboard step and writes Supabase values into `.env`.
 
+The frontend is powered by Next.js. Render should use `npm run build` as the build command and `npm start` as the start command. Next.js listens on Render's `PORT` automatically.
+
 ## Production checklist
 
 - Use a real teacher account; never share the publishable key or service-role key in source control.
