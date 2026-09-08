@@ -1,8 +1,8 @@
 import "../styles.css";
 
 export const metadata = {
-  title: "Tuition LMS",
-  description: "A simple private tuition resource library for students.",
+  title: "Gurukul",
+  description: "A simple learning resource library for students.",
 };
 
 export default function RootLayout({ children }) {

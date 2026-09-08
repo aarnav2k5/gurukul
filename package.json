@@ -2,7 +2,7 @@
   "name": "gurukul-library",
   "version": "1.0.0",
   "private": true,
-  "description": "Persistent private tuition resource library",
+  "description": "Persistent learning resource library for students and teachers",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

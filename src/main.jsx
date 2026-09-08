@@ -451,7 +451,7 @@ function App() {
   if (!client && loading)
     return (
       <div className="splash">
-        <Sparkles /> Loading Tuition LMS…
+        <Sparkles /> Loading Gurukul…
       </div>
     );
   if (!user && !student)
@@ -684,7 +684,7 @@ function App() {
             />
           )}
         </section>
-        <footer className="site-footer">Tuition LMS <span>·</span> Build v{APP_VERSION}</footer>
+        <footer className="site-footer">Gurukul <span>·</span> Build v{APP_VERSION}</footer>
       </main>
       <AnimatePresence>
         {upload && (
@@ -735,7 +735,7 @@ function Logo() {
       <span>
         <Sparkles size={17} />
       </span>
-      <b>Tuition LMS</b>
+      <b>Gurukul</b>
     </div>
   );
 }
