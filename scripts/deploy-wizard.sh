@@ -186,7 +186,7 @@ finish() {
 
 TOTAL_STAGES=6
 
-banner "Gurukul production deployment"
+banner "gurukul production deployment"
 
 stage "Create the Supabase project"
 say "Create the hosted database, authentication service, and private file bucket."

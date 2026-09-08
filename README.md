@@ -1,4 +1,4 @@
-# Gurukul
+# gurukul
 
 A learning resource library for chapter notes, previous-year questions, and sample papers with marking schemes.
 

@@ -1,7 +1,7 @@
 import "../styles.css";
 
 export const metadata = {
-  title: "Gurukul",
+  title: "gurukul",
   description: "A simple learning resource library for students.",
 };
 
