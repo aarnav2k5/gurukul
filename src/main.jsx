@@ -7,9 +7,16 @@ import { Button } from "./components/ui/button";
 import { Spotlight } from "./components/ui/spotlight";
 import { SignInForm } from "./components/auth/SignInForm";
 import { ResourceCard } from "./components/resources/ResourceCard";
-import { GuidedBrowser, LibraryResults } from "./components/resources/LibraryBrowser";
+import {
+  GuidedBrowser,
+  LibraryResults,
+} from "./components/resources/LibraryBrowser";
 import { UploadResourceModal } from "./components/teacher/UploadResourceModal";
-import { EditResourceModal, SettingsModal, TrashModal } from "./components/teacher/TeacherModals";
+import {
+  EditResourceModal,
+  SettingsModal,
+  TrashModal,
+} from "./components/teacher/TeacherModals";
 import { resourceFileSchema } from "./lib/validations/resource";
 import { APP_VERSION } from "./lib/app-config";
 import { useLiveAudience } from "./hooks/useLiveAudience";
@@ -56,7 +63,10 @@ const safeName = (name) => name.replace(/[^a-zA-Z0-9._-]/g, "-");
 const formatBytes = (bytes) => {
   if (!bytes) return "Size unavailable";
   const units = ["B", "KB", "MB", "GB"];
-  const power = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const power = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1,
+  );
   return `${(bytes / 1024 ** power).toFixed(power ? 1 : 0)} ${units[power]}`;
 };
 const cn = (...xs) => xs.filter(Boolean).join(" ");
@@ -106,7 +116,10 @@ function App() {
       .then(async (cfg) => {
         if (!cfg.supabaseUrl || !cfg.supabaseAnonKey)
           throw Error("Supabase configuration is missing");
-        const db = createSupabaseBrowserClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+        const db = createSupabaseBrowserClient(
+          cfg.supabaseUrl,
+          cfg.supabaseAnonKey,
+        );
         if (!live) return;
         setSupabaseConfig(cfg);
         setClient(db);
@@ -150,36 +163,44 @@ function App() {
       setLoading(false);
       return;
     }
-    const mapRows = async (data) => Promise.all(
-      (data || []).map(async (r) => {
-        const url = publicMode
-          ? db.storage.from("resources").getPublicUrl(r.file_path, { download: r.file_name }).data
-              .publicUrl
-          : (
-              await db.storage
+    const mapRows = async (data) =>
+      Promise.all(
+        (data || []).map(async (r) => {
+          const url = publicMode
+            ? db.storage
                 .from("resources")
-                .createSignedUrl(r.file_path, 3600, { download: r.file_name })
-            ).data?.signedUrl;
-        const scheme = r.marking_scheme_path
-          ? publicMode
-            ? db.storage.from("resources").getPublicUrl(r.marking_scheme_path, { download: r.marking_scheme_name || true })
-                .data.publicUrl
+                .getPublicUrl(r.file_path, { download: r.file_name }).data
+                .publicUrl
             : (
                 await db.storage
                   .from("resources")
-                  .createSignedUrl(r.marking_scheme_path, 3600, { download: r.marking_scheme_name || true })
-              ).data?.signedUrl
-          : null;
-        return {
-          ...r,
-          classLevel: r.class_level,
-          fileName: r.file_name,
-          fileUrl: url,
-          schemeUrl: scheme,
-          createdAt: r.created_at,
-        };
-      }),
-    );
+                  .createSignedUrl(r.file_path, 3600, { download: r.file_name })
+              ).data?.signedUrl;
+          const scheme = r.marking_scheme_path
+            ? publicMode
+              ? db.storage
+                  .from("resources")
+                  .getPublicUrl(r.marking_scheme_path, {
+                    download: r.marking_scheme_name || true,
+                  }).data.publicUrl
+              : (
+                  await db.storage
+                    .from("resources")
+                    .createSignedUrl(r.marking_scheme_path, 3600, {
+                      download: r.marking_scheme_name || true,
+                    })
+                ).data?.signedUrl
+            : null;
+          return {
+            ...r,
+            classLevel: r.class_level,
+            fileName: r.file_name,
+            fileUrl: url,
+            schemeUrl: scheme,
+            createdAt: r.created_at,
+          };
+        }),
+      );
     const rows = await mapRows(result.data);
     setResources(rows);
     if (!publicMode) {
@@ -203,20 +224,30 @@ function App() {
     }
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", `${supabaseConfig.supabaseUrl}/storage/v1/object/resources/${path.split("/").map(encodeURIComponent).join("/")}`);
+      xhr.open(
+        "POST",
+        `${supabaseConfig.supabaseUrl}/storage/v1/object/resources/${path.split("/").map(encodeURIComponent).join("/")}`,
+      );
       xhr.setRequestHeader("Authorization", `Bearer ${session.access_token}`);
       xhr.setRequestHeader("apikey", supabaseConfig.supabaseAnonKey);
-      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.setRequestHeader(
+        "Content-Type",
+        file.type || "application/octet-stream",
+      );
       xhr.setRequestHeader("x-upsert", "false");
       xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
+        if (event.lengthComputable)
+          onProgress(Math.round((event.loaded / event.total) * 100));
       };
-      xhr.onerror = () => reject(Error("Network error while uploading the file."));
+      xhr.onerror = () =>
+        reject(Error("Network error while uploading the file."));
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else {
           let message = "Could not upload the file.";
-          try { message = JSON.parse(xhr.responseText).message || message; } catch {}
+          try {
+            message = JSON.parse(xhr.responseText).message || message;
+          } catch {}
           reject(Error(message));
         }
       };
@@ -234,16 +265,29 @@ function App() {
       const result = await client.auth.signInWithPassword({ email, password });
       if (result.error) {
         setAuthLoading(false);
-        setError("Unable to sign in. Check your email and password and try again.");
-        setAuthFeedback({ type: "error", message: "Sign-in failed. Your account details were not accepted." });
+        setError(
+          "Unable to sign in. Check your email and password and try again.",
+        );
+        setAuthFeedback({
+          type: "error",
+          message: "Sign-in failed. Your account details were not accepted.",
+        });
         return;
       }
-      setAuthFeedback({ type: "success", message: "Signed in successfully. Opening your teacher library…" });
+      setAuthFeedback({
+        type: "success",
+        message: "Signed in successfully. Opening your teacher library…",
+      });
       setTimeout(() => location.reload(), 650);
     } catch (err) {
       setAuthLoading(false);
-      setError(err?.message || "Sign-in is temporarily unavailable. Try again.");
-      setAuthFeedback({ type: "error", message: "We could not reach the authentication service." });
+      setError(
+        err?.message || "Sign-in is temporarily unavailable. Try again.",
+      );
+      setAuthFeedback({
+        type: "error",
+        message: "We could not reach the authentication service.",
+      });
     }
   }
   async function enterStudent() {
@@ -311,7 +355,10 @@ function App() {
       .eq("id", r.id);
     if (deleted.error) return notify(deleted.error.message);
     setResources((rs) => rs.filter((x) => x.id !== r.id));
-    setDeletedResources((rs) => [{ ...r, deletedAt: new Date().toISOString() }, ...rs]);
+    setDeletedResources((rs) => [
+      { ...r, deletedAt: new Date().toISOString() },
+      ...rs,
+    ]);
     notify("Resource moved to Recently deleted");
   }
   async function restore(r) {
@@ -325,7 +372,8 @@ function App() {
     notify("Resource restored");
   }
   async function permanentlyDelete(r) {
-    if (!confirm(`Permanently delete “${r.title}”? This cannot be undone.`)) return;
+    if (!confirm(`Permanently delete “${r.title}”? This cannot be undone.`))
+      return;
     const storage = await client.storage
       .from("resources")
       .remove([r.file_path, r.marking_scheme_path].filter(Boolean));
@@ -354,14 +402,35 @@ function App() {
         .limit(1);
       if (duplicate.error) throw duplicate.error;
       if (duplicate.data?.length) {
-        return notify(`This file is already uploaded as “${duplicate.data[0].title}”`);
+        return notify(
+          `This file is already uploaded as “${duplicate.data[0].title}”`,
+        );
       }
-      setUploadProgress({ percent: 0, status: "Uploading resource…", fileName: file.name, fileSize: file.size, active: true });
-      await uploadWithProgress(path, file, (percent) => setUploadProgress((p) => ({ ...p, percent: scheme ? Math.round(percent * 0.75) : percent })));
+      setUploadProgress({
+        percent: 0,
+        status: "Uploading resource…",
+        fileName: file.name,
+        fileSize: file.size,
+        active: true,
+      });
+      await uploadWithProgress(path, file, (percent) =>
+        setUploadProgress((p) => ({
+          ...p,
+          percent: scheme ? Math.round(percent * 0.75) : percent,
+        })),
+      );
       uploadedPaths.push(path);
       if (scheme) {
-        setUploadProgress((p) => ({ ...p, status: "Uploading marking scheme…" }));
-        await uploadWithProgress(schemePath, scheme, (percent) => setUploadProgress((p) => ({ ...p, percent: 75 + Math.round(percent * 0.25) })));
+        setUploadProgress((p) => ({
+          ...p,
+          status: "Uploading marking scheme…",
+        }));
+        await uploadWithProgress(schemePath, scheme, (percent) =>
+          setUploadProgress((p) => ({
+            ...p,
+            percent: 75 + Math.round(percent * 0.25),
+          })),
+        );
         uploadedPaths.push(schemePath);
       }
       const insert = await client.from("resources").insert({
@@ -381,13 +450,28 @@ function App() {
         marking_scheme_size: scheme?.size || null,
       });
       if (insert.error) throw insert.error;
-      setUploadProgress({ percent: 100, status: "Upload complete", fileName: file.name, fileSize: file.size, done: true });
+      setUploadProgress({
+        percent: 100,
+        status: "Upload complete",
+        fileName: file.name,
+        fileSize: file.size,
+        done: true,
+      });
       await load(client, false);
       notify("Resource saved");
-      setTimeout(() => { setUpload(false); setUploadProgress(null); }, 650);
+      setTimeout(() => {
+        setUpload(false);
+        setUploadProgress(null);
+      }, 650);
     } catch (err) {
-      if (uploadedPaths.length) await client.storage.from("resources").remove(uploadedPaths);
-      setUploadProgress((p) => ({ ...(p || {}), status: "Upload failed", error: true, active: false }));
+      if (uploadedPaths.length)
+        await client.storage.from("resources").remove(uploadedPaths);
+      setUploadProgress((p) => ({
+        ...(p || {}),
+        status: "Upload failed",
+        error: true,
+        active: false,
+      }));
       notify(err.message || "Could not save resource");
     }
   }
@@ -397,11 +481,20 @@ function App() {
     const replacementFile = f.get("file");
     const replacementSchemeFile = f.get("scheme");
     const replacement = replacementFile?.size ? replacementFile : null;
-    const replacementScheme = replacementSchemeFile?.size ? replacementSchemeFile : null;
+    const replacementScheme = replacementSchemeFile?.size
+      ? replacementSchemeFile
+      : null;
     const fileCheck = replacement && resourceFileSchema.safeParse(replacement);
-    const schemeCheck = replacementScheme && resourceFileSchema.safeParse(replacementScheme);
-    if (fileCheck && !fileCheck.success) return notify(fileCheck.error.issues[0]?.message || "Invalid replacement file");
-    if (schemeCheck && !schemeCheck.success) return notify(schemeCheck.error.issues[0]?.message || "Invalid marking scheme file");
+    const schemeCheck =
+      replacementScheme && resourceFileSchema.safeParse(replacementScheme);
+    if (fileCheck && !fileCheck.success)
+      return notify(
+        fileCheck.error.issues[0]?.message || "Invalid replacement file",
+      );
+    if (schemeCheck && !schemeCheck.success)
+      return notify(
+        schemeCheck.error.issues[0]?.message || "Invalid marking scheme file",
+      );
     const old = editing;
     const keepScheme = f.get("category") === "papers";
     let nextPath = old.file_path;
@@ -410,48 +503,75 @@ function App() {
     try {
       if (replacement) {
         nextPath = `${user.id}/${old.id}-${crypto.randomUUID()}-${safeName(replacement.name)}`;
-        setUploadProgress({ percent: 0, status: "Replacing resource file…", fileName: replacement.name, fileSize: replacement.size, active: true });
-        await uploadWithProgress(nextPath, replacement, (percent) => setUploadProgress((p) => ({ ...p, percent })));
+        setUploadProgress({
+          percent: 0,
+          status: "Replacing resource file…",
+          fileName: replacement.name,
+          fileSize: replacement.size,
+          active: true,
+        });
+        await uploadWithProgress(nextPath, replacement, (percent) =>
+          setUploadProgress((p) => ({ ...p, percent })),
+        );
         uploaded.push(nextPath);
       }
       if (replacementScheme) {
         nextSchemePath = `${user.id}/${old.id}-scheme-${crypto.randomUUID()}-${safeName(replacementScheme.name)}`;
-        setUploadProgress((p) => ({ ...(p || {}), status: "Replacing marking scheme…" }));
-        await uploadWithProgress(nextSchemePath, replacementScheme, (percent) => setUploadProgress((p) => ({ ...p, percent })));
+        setUploadProgress((p) => ({
+          ...(p || {}),
+          status: "Replacing marking scheme…",
+        }));
+        await uploadWithProgress(nextSchemePath, replacementScheme, (percent) =>
+          setUploadProgress((p) => ({ ...p, percent })),
+        );
         uploaded.push(nextSchemePath);
       }
-      const result = await client.from("resources").update({
-        title: f.get("title"),
-        class_level: f.get("classLevel"),
-        subject: f.get("subject"),
-        chapter: f.get("chapter"),
-        category: f.get("category"),
-        year: f.get("year") ? Number(f.get("year")) : null,
-        marks: f.get("marks") ? Number(f.get("marks")) : null,
-        file_name: replacement?.name || old.file_name,
-        file_size: replacement ? f.get("file").size : old.file_size,
-        file_path: nextPath,
-        marking_scheme_name: keepScheme ? replacementScheme?.name || old.marking_scheme_name : null,
-        marking_scheme_size: keepScheme ? replacementScheme ? f.get("scheme").size : old.marking_scheme_size : null,
-        marking_scheme_path: nextSchemePath,
-        updated_at: new Date().toISOString(),
-      }).eq("id", old.id);
+      const result = await client
+        .from("resources")
+        .update({
+          title: f.get("title"),
+          class_level: f.get("classLevel"),
+          subject: f.get("subject"),
+          chapter: f.get("chapter"),
+          category: f.get("category"),
+          year: f.get("year") ? Number(f.get("year")) : null,
+          marks: f.get("marks") ? Number(f.get("marks")) : null,
+          file_name: replacement?.name || old.file_name,
+          file_size: replacement ? f.get("file").size : old.file_size,
+          file_path: nextPath,
+          marking_scheme_name: keepScheme
+            ? replacementScheme?.name || old.marking_scheme_name
+            : null,
+          marking_scheme_size: keepScheme
+            ? replacementScheme
+              ? f.get("scheme").size
+              : old.marking_scheme_size
+            : null,
+          marking_scheme_path: nextSchemePath,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", old.id);
       if (result.error) throw result.error;
-      const oldPaths = [replacement && old.file_path, (replacementScheme || !keepScheme) && old.marking_scheme_path].filter(Boolean);
-      if (oldPaths.length) await client.storage.from("resources").remove(oldPaths);
+      const oldPaths = [
+        replacement && old.file_path,
+        (replacementScheme || !keepScheme) && old.marking_scheme_path,
+      ].filter(Boolean);
+      if (oldPaths.length)
+        await client.storage.from("resources").remove(oldPaths);
       setEditing(null);
       setUploadProgress(null);
       await load(client, false);
       notify("Resource updated");
     } catch (err) {
-      if (uploaded.length) await client.storage.from("resources").remove(uploaded);
+      if (uploaded.length)
+        await client.storage.from("resources").remove(uploaded);
       notify(err.message || "Could not update resource");
     }
   }
   if (!client && loading)
     return (
       <div className="splash">
-        <Sparkles /> Loading Gurukul…
+        <Sparkles /> Loading gurukul…
       </div>
     );
   if (!user && !student)
@@ -460,7 +580,10 @@ function App() {
         error={error}
         feedback={authFeedback}
         loading={authLoading}
-        onFieldChange={() => { setError(""); setAuthFeedback(null); }}
+        onFieldChange={() => {
+          setError("");
+          setAuthFeedback(null);
+        }}
         onSubmit={signIn}
         onStudent={enterStudent}
         theme={theme}
@@ -630,14 +753,37 @@ function App() {
           {!student && teacher && (
             <div className="live-activity">
               <div className="live-activity-heading">
-                <span className="live-indicator"><i /> Live activity</span>
+                <span className="live-indicator">
+                  <i /> Live activity
+                </span>
                 <small>Updates automatically</small>
               </div>
               <div className="live-activity-grid">
-                <div><Users size={18} /><span><b>{studentsOnline}</b><small>students viewing now</small></span></div>
-                <div><Users size={18} /><span><b>{teachersOnline.length}</b><small>teachers online</small></span></div>
+                <div>
+                  <Users size={18} />
+                  <span>
+                    <b>{studentsOnline}</b>
+                    <small>students viewing now</small>
+                  </span>
+                </div>
+                <div>
+                  <Users size={18} />
+                  <span>
+                    <b>{teachersOnline.length}</b>
+                    <small>teachers online</small>
+                  </span>
+                </div>
               </div>
-              {teachersOnline.length > 0 && <div className="teacher-presence">{teachersOnline.map((item) => <span key={item.id}><i />{item.name}</span>)}</div>}
+              {teachersOnline.length > 0 && (
+                <div className="teacher-presence">
+                  {teachersOnline.map((item) => (
+                    <span key={item.id}>
+                      <i />
+                      {item.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {step < 4 ? (
@@ -684,7 +830,9 @@ function App() {
             />
           )}
         </section>
-        <footer className="site-footer">Gurukul <span>·</span> Build v{APP_VERSION}</footer>
+        <footer className="site-footer">
+          gurukul <span>·</span> Build v{APP_VERSION}
+        </footer>
       </main>
       <AnimatePresence>
         {upload && (
@@ -692,12 +840,17 @@ function App() {
             classes={CLASSES}
             subjectsFor={subjectsFor}
             types={TYPES}
-            onClose={() => { if (!uploadProgress?.active) { setUpload(false); setUploadProgress(null); } }}
+            onClose={() => {
+              if (!uploadProgress?.active) {
+                setUpload(false);
+                setUploadProgress(null);
+              }
+            }}
             onSubmit={saveUpload}
             progress={uploadProgress}
           />
         )}
-      {settings && (
+        {settings && (
           <SettingsModal
             user={user}
             onClose={() => setSettings(false)}
@@ -708,7 +861,12 @@ function App() {
       {editing && (
         <EditResourceModal
           resource={editing}
-          onClose={() => { if (!uploadProgress?.active) { setEditing(null); setUploadProgress(null); } }}
+          onClose={() => {
+            if (!uploadProgress?.active) {
+              setEditing(null);
+              setUploadProgress(null);
+            }
+          }}
           onSubmit={saveEdit}
         />
       )}
@@ -721,9 +879,19 @@ function App() {
         />
       )}
       <nav className="mobile-bottom-nav" aria-label="Quick navigation">
-        <button onClick={browse}><Library size={17} /> Browse</button>
-        {!student && <button onClick={() => setUpload(true)}><Upload size={17} /> Upload</button>}
-        {!student && <button onClick={() => setSettings(true)}><Settings size={17} /> Settings</button>}
+        <button onClick={browse}>
+          <Library size={17} /> Browse
+        </button>
+        {!student && (
+          <button onClick={() => setUpload(true)}>
+            <Upload size={17} /> Upload
+          </button>
+        )}
+        {!student && (
+          <button onClick={() => setSettings(true)}>
+            <Settings size={17} /> Settings
+          </button>
+        )}
       </nav>
       <div className={cn("toast", toast && "show")}>{toast}</div>
     </motion.div>
@@ -735,7 +903,7 @@ function Logo() {
       <span>
         <Sparkles size={17} />
       </span>
-      <b>Gurukul</b>
+      <b>gurukul</b>
     </div>
   );
 }
@@ -747,7 +915,16 @@ function Nav({ icon: Icon, text, onClick, active }) {
     </button>
   );
 }
-function Auth({ error, feedback, loading, onFieldChange, onSubmit, onStudent, theme, setTheme }) {
+function Auth({
+  error,
+  feedback,
+  loading,
+  onFieldChange,
+  onSubmit,
+  onStudent,
+  theme,
+  setTheme,
+}) {
   return (
     <Spotlight className="auth-screen">
       <motion.div
