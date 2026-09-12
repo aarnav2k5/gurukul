@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "./lib/supabase/browser";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "./components/ui/button";
@@ -105,6 +105,7 @@ function App() {
     [settings, setSettings] = useState(false),
     [mobileMenu, setMobileMenu] = useState(false),
     [toast, setToast] = useState("");
+  const toastTimer = useRef(null);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("gurukul-theme", theme);
@@ -214,8 +215,12 @@ function App() {
     setLoading(false);
   }
   function notify(message) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(message);
-    setTimeout(() => setToast(""), 2800);
+    toastTimer.current = setTimeout(() => {
+      setToast("");
+      toastTimer.current = null;
+    }, 2800);
   }
   async function uploadWithProgress(path, file, onProgress) {
     const session = (await client.auth.getSession()).data.session;
