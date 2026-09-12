@@ -6,7 +6,7 @@ import { Upload, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
-import { uploadResourceSchema, type UploadResourceValues } from "../../lib/validations/resource";
+import { uploadResourceSchema, type UploadResourceInput, type UploadResourceValues } from "../../lib/validations/resource";
 
 type UploadResourceModalProps = {
   classes: string[];
@@ -18,7 +18,7 @@ type UploadResourceModalProps = {
 };
 
 export function UploadResourceModal({ classes, subjectsFor, types, onClose, onSubmit, progress }: UploadResourceModalProps) {
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<UploadResourceValues>({
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<UploadResourceInput, unknown, UploadResourceValues>({
     resolver: zodResolver(uploadResourceSchema),
     defaultValues: { classLevel: classes[0], subject: subjectsFor(classes[0])[0], category: "notes", chapter: "", year: "", marks: "" },
   });
@@ -40,10 +40,10 @@ export function UploadResourceModal({ classes, subjectsFor, types, onClose, onSu
           <label>Chapter / topic<input {...register("chapter")} />{errors.chapter && <small className="field-error">{errors.chapter.message}</small>}</label>
           <div className="form-grid">
             <label>Resource type<Select {...register("category")}>{Object.entries(types).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</Select></label>
-            <label>File<input {...register("file", { setValueAs: (files: FileList) => files?.[0] })} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" />{errors.file && <small className="field-error">{String(errors.file.message)}</small>}</label>
+            <label>File<input {...register("file")} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" />{errors.file && <small className="field-error">{String(errors.file.message)}</small>}</label>
           </div>
           <div className="form-grid"><label>Year<input {...register("year")} type="number" /></label><label>Marks<input {...register("marks")} type="number" /></label></div>
-          {category === "papers" && <label>Marking scheme<input {...register("scheme", { setValueAs: (files: FileList) => files?.[0] })} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" /></label>}
+          {category === "papers" && <label>Marking scheme<input {...register("scheme")} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" /></label>}
           {progress && <div className={`upload-progress ${progress.error ? "failed" : ""} ${progress.done ? "complete" : ""}`}><div className="upload-progress-top"><span>{progress.status}</span><b>{progress.percent}%</b></div><div className="progress-track"><span style={{ width: `${progress.percent}%` }} /></div><small>{progress.fileName} · {progress.fileSize ? `${(progress.fileSize / 1048576).toFixed(1)} MB` : ""}</small></div>}
           <Button className="primary full" disabled={busy}>{busy && <span className="spinner" aria-hidden="true" />} {busy ? "Uploading…" : "Save resource"}</Button>
         </form>

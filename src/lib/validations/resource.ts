@@ -16,6 +16,18 @@ export const resourceFileSchema = z
   .refine((file) => file.size <= MAX_RESOURCE_SIZE, "Files must be 50 MB or smaller.")
   .refine((file) => allowedFileTypes.includes(file.type) || /\.(pdf|docx?|pptx?)$/i.test(file.name), "Use a PDF, Word, or PowerPoint file.");
 
+// Browser file inputs provide FileList values. Normalize them before Zod
+// validates the upload so validation works consistently across browsers.
+const fileInputSchema = z.preprocess(
+  (value) => {
+    if (typeof FileList !== "undefined" && value instanceof FileList) {
+      return value.item(0);
+    }
+    return value;
+  },
+  resourceFileSchema,
+);
+
 export const resourceMetadataSchema = z.object({
   title: z.string().trim().min(1, "Enter a title.").max(200, "Title is too long."),
   classLevel: z.string().min(1, "Choose a class."),
@@ -27,8 +39,9 @@ export const resourceMetadataSchema = z.object({
 });
 
 export const uploadResourceSchema = resourceMetadataSchema.extend({
-  file: resourceFileSchema,
-  scheme: resourceFileSchema.optional(),
+  file: fileInputSchema,
+  scheme: fileInputSchema.optional(),
 });
 
 export type UploadResourceValues = z.infer<typeof uploadResourceSchema>;
+export type UploadResourceInput = z.input<typeof uploadResourceSchema>;
