@@ -20,6 +20,7 @@ import {
 import { resourceFileSchema } from "./lib/validations/resource";
 import { APP_VERSION } from "./lib/app-config";
 import { useLiveAudience } from "./hooks/useLiveAudience";
+import { useTeacherSession } from "./hooks/useTeacherSession";
 import {
   BookOpen,
   ClipboardList,
@@ -110,6 +111,14 @@ function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("gurukul-theme", theme);
   }, [theme]);
+  useEffect(() => {
+    const message = sessionStorage.getItem("gurukul-session-message");
+    if (message) {
+      sessionStorage.removeItem("gurukul-session-message");
+      setError(message);
+      setAuthFeedback({ type: "error", message: "This teacher account is active in another tab or device." });
+    }
+  }, []);
   useEffect(() => {
     let live = true;
     fetch("/api/config")
@@ -310,6 +319,22 @@ function App() {
     teacher,
     student,
     teacherName,
+  });
+  const handleSessionReplaced = () => {
+    sessionStorage.setItem("gurukul-session-message", "You were signed out because this teacher account was opened on another device or tab.");
+    location.reload();
+  };
+  const handleSessionError = (sessionError) => {
+    if (sessionError?.code === "42P01" || sessionError?.message?.includes("teacher_sessions")) {
+      notify("Single-device protection is not configured yet. Run the session migration in Supabase.");
+    }
+  };
+  useTeacherSession({
+    client,
+    user,
+    teacher,
+    onReplaced: handleSessionReplaced,
+    onError: handleSessionError,
   });
   const filtered = useMemo(
     () =>
