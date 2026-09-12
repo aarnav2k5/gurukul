@@ -6,6 +6,10 @@ const CHECK_INTERVAL_MS = 10000;
 
 export function useTeacherSession({ client, user, teacher, onReplaced, onError }) {
   const sessionIdRef = useRef(null);
+  const onReplacedRef = useRef(onReplaced);
+  const onErrorRef = useRef(onError);
+  onReplacedRef.current = onReplaced;
+  onErrorRef.current = onError;
 
   useEffect(() => {
     if (!client || !user || !teacher) return undefined;
@@ -20,7 +24,7 @@ export function useTeacherSession({ client, user, teacher, onReplaced, onError }
         { user_id: user.id, session_id: sessionId, updated_at: new Date().toISOString() },
         { onConflict: "user_id" },
       );
-      if (result.error && !cancelled) onError?.(result.error);
+      if (result.error && !cancelled) onErrorRef.current?.(result.error);
       return !result.error;
     }
 
@@ -32,13 +36,13 @@ export function useTeacherSession({ client, user, teacher, onReplaced, onError }
         .maybeSingle();
       if (cancelled) return;
       if (result.error) {
-        onError?.(result.error);
+        onErrorRef.current?.(result.error);
         return;
       }
       if (result.data?.session_id && result.data.session_id !== sessionIdRef.current) {
         cancelled = true;
         await client.auth.signOut({ scope: "local" });
-        onReplaced?.();
+        onReplacedRef.current?.();
       }
     }
 
@@ -51,5 +55,5 @@ export function useTeacherSession({ client, user, teacher, onReplaced, onError }
       cancelled = true;
       if (interval) window.clearInterval(interval);
     };
-  }, [client, user, teacher, onReplaced, onError]);
+  }, [client, user, teacher]);
 }
