@@ -288,6 +288,9 @@ function App() {
         });
         return;
       }
+      // Keep this login active and invalidate refresh sessions on other devices.
+      // The active-session hook also detects the replacement quickly in open tabs.
+      await client.auth.signOut({ scope: "others" });
       setAuthFeedback({
         type: "success",
         message: "Signed in successfully. Opening your teacher library…",
@@ -310,7 +313,7 @@ function App() {
     await load(client, true);
   }
   async function signOut() {
-    await client.auth.signOut();
+    await client.auth.signOut({ scope: "local" });
     location.reload();
   }
   const { studentsOnline, teachersOnline } = useLiveAudience({
